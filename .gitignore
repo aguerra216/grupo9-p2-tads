@@ -15,4 +15,4 @@ obligatorio.iml
 /resources/
 # Ignorar archivos pesados en resources
 /resources/*.csv
-resources
+resources/*
