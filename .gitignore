@@ -13,3 +13,5 @@
 obligatorioGrupo9Tads.iml
 obligatorio.iml
 /resources/
+# Ignorar archivos pesados en resources
+resources/*.csv
