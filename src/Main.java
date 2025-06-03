@@ -11,7 +11,7 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-
+        UMovie objUMovie = new UMovie();
         Scanner scanner = new Scanner(System.in);
         boolean salir = false;
 
@@ -27,56 +27,9 @@ public class Main {
             switch (opcion) {
                 case 1:
                     long inicio = System.currentTimeMillis();
-                    try (
-                            BufferedReader br = new BufferedReader(new FileReader("resources/movies_metadata.csv"))) {
-                        String line;
-                        br.readLine(); // Saltarse el header
-                        int count = 0;
-
-                        while ((line = br.readLine()) != null) {
-                            // Acumular líneas hasta que haya al menos 14 columnas
-                            while (true) {
-                                String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                                if (parts.length >= 14) {
-                                    // Parsear datos
-                                    try {
-                                        int id = Integer.parseInt(parts[5].trim());
-                                        String title = parts[8];
-                                        String language = parts[7];
-                                        String collectionGenres = parts[3];
-                                        MyLinkedListImpl<Genero> listaGeneros = parseGeneros(collectionGenres);
-                                        double revenue = 0.0;
-                                        try {
-                                            revenue = Double.parseDouble(parts[13]);
-                                        } catch (Exception e) {
-                                            revenue = 0.0;
-                                        }
-                                        String collectionData = parts[1];
-                                        Pelicula objPelicula = new Pelicula();
-                                        objPelicula.setIdPelicula(id);
-                                        objPelicula.setTitulo(title);
-                                        objPelicula.setIdiomaOriginal(language);
-                                        objPelicula.setListaGeneros(listaGeneros);
-                                        objPelicula.setRevenue(revenue);
-                                        System.out.println(objPelicula.getIdPelicula());
-                                        count++;
-                                    } catch (Exception e) {
-                                        System.out.println("Error en línea: " + e.getMessage());
-                                    }
-                                    break;
-                                } else {
-                                    String nextLine = br.readLine();
-                                    if (nextLine == null) break; // fin del archivo
-                                    line += "\n" + nextLine;
-                                }
-                            }
-                        }
-
-                        System.out.println("Películas cargadas: " + count);
-
-                    } catch (IOException e) {
-                        System.out.println("Error loading movies_metadata.csv: " + e.getMessage());
-                    }
+                    objUMovie.cargarPeliculas();
+                    objUMovie.cargarRatings();
+                    objUMovie.cargarCreditos();
                     long fin = System.currentTimeMillis();
                     System.out.println("Carga de datos exitosa, tiempo de ejecución de la carga: " + (fin - inicio) + " ms\n");
                     break;
@@ -142,40 +95,4 @@ public class Main {
             }
         }
     }
-
-    public static MyLinkedListImpl<Genero> parseGeneros(String generosRaw) {
-        MyLinkedListImpl<Genero> lista = new MyLinkedListImpl<>();
-
-        if (generosRaw == null || generosRaw.trim().isEmpty() || generosRaw.equals("[]")) {
-            return lista;
-        }
-
-        generosRaw = generosRaw.replace("'", "\"");
-
-        String[] objetos = generosRaw.split("\\},\\s*\\{");
-
-        for (String obj : objetos) {
-            try {
-                obj = obj.replace("[", "").replace("]", "").replace("{", "").replace("}", "").trim();
-                String[] campos = obj.split(",\\s*");
-
-                for (String campo : campos) {
-                    if (campo.contains("\"name\":")) {
-                        String[] keyValue = campo.split(":");
-                        if (keyValue.length == 2) {
-                            String nombre = keyValue[1].trim().replace("\"", "");
-                            Genero genero = Genero.fromString(nombre);
-                            if (genero != null) {
-                                lista.add(genero);
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        return lista;
-    }
-
-
 }

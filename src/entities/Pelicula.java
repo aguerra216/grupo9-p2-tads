@@ -18,6 +18,9 @@ public class Pelicula {
         this.listaGeneros = listaGeneros;
     }
 
+
+
+
     public double getRevenue() {
         return revenue;
     }

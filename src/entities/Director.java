@@ -1,4 +1,7 @@
 package entities;
 
-public class Director {
+public class Director extends Persona{
+    public Director(int id) {
+        super(id);
+    }
 }
