@@ -44,7 +44,6 @@ public class UMovie {
                                 revenue = 0.0;
                             }
                             String collectionData = parts[1];
-                            System.out.println(collectionData);
                             Saga objsaga = parseSaga(collectionData);
                             if(objsaga.getId() == null && objsaga.getNombre() == null) {
                                 objsaga.setId(id);
@@ -172,7 +171,7 @@ public class UMovie {
     }
 
     public void cargarRatings() {
-        try (BufferedReader br = new BufferedReader(new FileReader("resources/ratings.csv"))) {
+        try (BufferedReader br = new BufferedReader(new FileReader("resources/ratings_1mm.csv"))) {
             String line;
             br.readLine(); // Saltar header
             int count = 0;
@@ -192,11 +191,15 @@ public class UMovie {
                         usuarios.put(userId, nuevoUsuario);
                     }
                     Calificacion c = new Calificacion(userId, movieId, rating, timestamp);
+                    Pelicula pelicula = peliculas.get(movieId);
+                    pelicula.agregarRating(c);
+
 
                     //terminar de ver donde tengo list/hash guardada
 
 
                     count++;
+                    System.out.println("Ratings cargados " + count);
                 } catch (Exception e) {
                     // Línea inválida
                 }
