@@ -7,19 +7,26 @@ public class Pelicula {
     private String idiomaOriginal;
     private double revenue;
     private MyLinkedListImpl<Genero> listaGeneros;
+    private Integer idColeccion;
 
     public Pelicula() {}
 
-    public Pelicula(int idPelicula, String titulo, String idiomaOriginal, double revenue,  MyLinkedListImpl<Genero> listaGeneros) {
+    public Pelicula(int idPelicula, String titulo, String idiomaOriginal, double revenue,  MyLinkedListImpl<Genero> listaGeneros, Integer idColeccion) {
         this.idPelicula = idPelicula;
         this.titulo = titulo;
         this.idiomaOriginal = idiomaOriginal;
         this.revenue = revenue;
         this.listaGeneros = listaGeneros;
+        this.idColeccion = idColeccion;
     }
 
+    public Integer getIdColeccion() {
+        return idColeccion;
+    }
 
-
+    public void setIdColeccion(Integer idColeccion) {
+        this.idColeccion = idColeccion;
+    }
 
     public double getRevenue() {
         return revenue;

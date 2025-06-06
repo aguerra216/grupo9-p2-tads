@@ -1,7 +1,4 @@
-import entities.Calificacion;
-import entities.Genero;
-import entities.Pelicula;
-import entities.Usuario;
+import entities.*;
 import tads.HashT.*;
 import tads.LinkedList.MyLinkedListImpl;
 
@@ -12,11 +9,13 @@ import java.io.IOException;
 public class UMovie {
     private MyHashMap<Integer, Pelicula> peliculas;
     private MyHashMap<Integer, Usuario> usuarios;
+    private MyHashMap<Integer, Saga> sagas;
 
 
     public UMovie() {
         peliculas = new MyHashMap<>(50000);
         usuarios = new MyHashMap<>(1000000);
+        sagas = new MyHashMap<>(50000);
     }
 
     public void cargarPeliculas() {
@@ -30,7 +29,7 @@ public class UMovie {
                 // Acumular líneas hasta que haya al menos 14 columnas
                 while (true) {
                     String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                    if (parts.length >= 14) {
+                    if (parts.length >= 18) {
                         // Parsear datos
                         try {
                             int id = Integer.parseInt(parts[5].trim());
@@ -45,6 +44,13 @@ public class UMovie {
                                 revenue = 0.0;
                             }
                             String collectionData = parts[1];
+                            System.out.println(collectionData);
+                            Saga objsaga = parseSaga(collectionData);
+                            if(objsaga.getId() == null && objsaga.getNombre() == null) {
+                                objsaga.setId(id);
+                                objsaga.setNombre(title);
+
+                            }
 
                             Pelicula objPelicula = new Pelicula();
                             objPelicula.setIdPelicula(id);
@@ -52,6 +58,8 @@ public class UMovie {
                             objPelicula.setIdiomaOriginal(language);
                             objPelicula.setListaGeneros(listaGeneros);
                             objPelicula.setRevenue(revenue);
+                            objPelicula.setIdColeccion(objsaga.getId());
+                            objsaga.agregarPelicula(id);
 
                             peliculas.put(id, objPelicula);
 
@@ -75,7 +83,61 @@ public class UMovie {
         }
     }
 
-    public static MyLinkedListImpl<Genero> parseGeneros(String generosRaw) {
+    //Funcion que devuelve la saga y la agrega si no esta al hash
+    public Saga parseSaga(String sagaRaw) {
+        if (sagaRaw == null || sagaRaw.trim().isEmpty() || sagaRaw.equals("null")) {
+            Saga objsaga = new Saga();
+            return objsaga;
+        }
+
+        sagaRaw = sagaRaw.replace("'", "\"").trim();
+        sagaRaw = sagaRaw.replaceAll("^\"|\"$", ""); // Quita comillas externas si las tiene
+
+        try {
+            // Elimina las llaves
+            sagaRaw = sagaRaw.replace("{", "").replace("}", "");
+            String[] campos = sagaRaw.split(",\\s*");
+
+            int id = -1;
+            String name = null;
+
+            for (String campo : campos) {
+                String[] keyValue = campo.split(":", 2);
+                if (keyValue.length != 2) continue;
+
+                String key = keyValue[0].trim().replace("\"", "");
+                String value = keyValue[1].trim().replace("\"", "");
+
+                if (key.equals("id")) {
+                    id = Integer.parseInt(value);
+                } else if (key.equals("name")) {
+                    name = value;
+                }
+            }
+
+            Saga nueva = new Saga();
+
+            if (id != -1 && name != null) {
+                nueva.setId(id);
+                nueva.setNombre(name);
+                if (!sagas.contains(id)) {
+                    sagas.put(id, nueva);
+                }
+            }
+            return nueva;
+
+
+        } catch (Exception e) {
+            // Ignorado o logueado si es necesario
+        }
+        return null;
+
+    }
+
+
+
+    //Funcion que nos devuelve solo los nombres de los generos en una lista
+    public MyLinkedListImpl<Genero> parseGeneros(String generosRaw) {
         MyLinkedListImpl<Genero> lista = new MyLinkedListImpl<>();
 
         if (generosRaw == null || generosRaw.trim().isEmpty() || generosRaw.equals("[]")) {

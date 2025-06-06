@@ -1,4 +1,4 @@
-import csvProcessor.*;
+
 import entities.Genero;
 import entities.Pelicula;
 import tads.LinkedList.MyLinkedListImpl;
@@ -28,8 +28,8 @@ public class Main {
                 case 1:
                     long inicio = System.currentTimeMillis();
                     objUMovie.cargarPeliculas();
-                    objUMovie.cargarRatings();
-                    objUMovie.cargarCreditos();
+                    //objUMovie.cargarRatings();
+                    //objUMovie.cargarCreditos();
                     long fin = System.currentTimeMillis();
                     System.out.println("Carga de datos exitosa, tiempo de ejecución de la carga: " + (fin - inicio) + " ms\n");
                     break;
