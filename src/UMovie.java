@@ -10,12 +10,17 @@ public class UMovie {
     private MyHashMap<Integer, Pelicula> peliculas;
     private MyHashMap<Integer, Usuario> usuarios;
     private MyHashMap<Integer, Saga> sagas;
+    private MyHashMap<Integer, Actor> actores;
+    private MyHashMap<Integer, Director> directores;
 
 
     public UMovie() {
         peliculas = new MyHashMap<>(50000);
         usuarios = new MyHashMap<>(1000000);
         sagas = new MyHashMap<>(50000);
+        actores = new MyHashMap<>(50000);
+        directores = new MyHashMap<>(50000);
+
     }
 
     public void cargarPeliculas() {
@@ -76,6 +81,7 @@ public class UMovie {
             }
 
             System.out.println("Películas cargadas: " + count); //prueba
+
 
         } catch (IOException e) {
             System.out.println("Error loading movies_metadata.csv: " + e.getMessage());
@@ -179,29 +185,41 @@ public class UMovie {
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(",");
 
+                if (parts.length != 4) {
+                    System.out.println("linea invalida: " + line);
+                    continue;
+                }
+
                 try {
                     int userId = Integer.parseInt(parts[0]);
                     int movieId = Integer.parseInt(parts[1]);
+                    System.out.println(movieId);
                     double rating = Double.parseDouble(parts[2]);
                     long timestamp = Long.parseLong(parts[3]);
 
 
                     if (!usuarios.contains(userId)) {
+                        System.out.println("usuario nuevo");
                         Usuario nuevoUsuario = new Usuario(userId);
                         usuarios.put(userId, nuevoUsuario);
                     }
                     Calificacion c = new Calificacion(userId, movieId, rating, timestamp);
-                    Pelicula pelicula = peliculas.get(movieId);
-                    pelicula.agregarRating(c);
 
+                    Pelicula pelicula = peliculas.get(movieId);
+                    if (pelicula != null) {
+                        pelicula.agregarRating(c);
+                        System.out.println("pelicula encontrada");
+                    } else {
+                        System.out.println("Pelicula no encontrada: " + movieId);
+                        continue;
+                    }
 
                     //terminar de ver donde tengo list/hash guardada
 
-
                     count++;
-                    System.out.println("Ratings cargados " + count);
+
                 } catch (Exception e) {
-                    // Línea inválida
+                    System.out.println("Error parsing rating: " + line + e.getMessage());
                 }
             }
 
@@ -227,11 +245,11 @@ public class UMovie {
                             // Parsear el ID de la película (última columna)
                             int movieId = Integer.parseInt(parts[2].trim());
 
-                            // Parsear el campo 'cast' para obtener IDs de actores
-                            MyLinkedListImpl<Integer> actorIds = parseActores(parts[0].trim());
+                            // Parsear actores, crearlos y agregarlos al hash con su pelicula
+                            parseActores(parts[0].trim(), movieId);
 
                             // Parsear el campo 'crew' para obtener el ID del director
-                            int directorId = parseDirector(parts[1].trim());
+                            parseDirector(parts[1].trim(), movieId);
 
                             //crear cada actor si no existe y asociarlos a pelicula
                             //crear director si no existe y asociarlo a pelicula
@@ -257,11 +275,11 @@ public class UMovie {
     }
 
     // Función auxiliar para parsear la lista de actores
-    private MyLinkedListImpl<Integer> parseActores(String castRaw) {
+    private void parseActores(String castRaw, Integer idMovie) {
         MyLinkedListImpl<Integer> actorIds = new MyLinkedListImpl<>();
 
         if (castRaw == null || castRaw.trim().isEmpty() || castRaw.equals("[]")) {
-            return actorIds;
+            return;
         }
 
         // Reemplazar comillas simples por dobles para consistencia
@@ -276,30 +294,45 @@ public class UMovie {
                 obj = obj.replace("[", "").replace("]", "").replace("{", "").replace("}", "").trim();
                 String[] campos = obj.split(",\\s*");
 
+                int id = -1;
+                String name = null;
+
                 for (String campo : campos) {
-                    if (campo.contains("\"id\":")) {
-                        String[] keyValue = campo.split(":\\s*");
-                        if (keyValue.length == 2) {
-                            String idStr = keyValue[1].trim().replace("\"", "");
+                    String[] keyValue = campo.split(":\\s*");
+                    if (keyValue.length == 2) {
+                        String key = keyValue[0].trim().replace("\"", "");
+                        String value = keyValue[1].trim().replace("\"", "");
+
+                        if (key.equals("id")) {
                             try {
-                                int actorId = Integer.parseInt(idStr);
-                                actorIds.add(actorId);
+                                id = Integer.parseInt(value);
                             } catch (NumberFormatException ignored) {}
+                        } else if (key.equals("name")) {
+                            name = value;
                         }
                     }
+                }
+
+                if (id != -1 && name != null) {
+                    Actor actor = new Actor(id, name);
+                    actor.agregarPelicula(idMovie);
+                    if (!actorIds.contains(id)) {
+                        actores.put(id, actor);
+                    }
+
                 }
             } catch (Exception ignored) {}
         }
 
-        return actorIds;
+
     }
 
     // Función auxiliar para parsear el director
-    private int parseDirector(String crewRaw) {
+    private void parseDirector(String crewRaw, Integer idMovie) {
         int directorId = -1; // Valor por defecto si no se encuentra director
 
         if (crewRaw == null || crewRaw.trim().isEmpty() || crewRaw.equals("[]")) {
-            return directorId;
+            return;
         }
 
         // Reemplazar comillas simples por dobles para consistencia
@@ -317,31 +350,36 @@ public class UMovie {
                 boolean isDirector = false;
                 String idStr = null;
 
+                int id = -1;
+                String name = null;
+
                 for (String campo : campos) {
-                    if (campo.contains("\"job\":")) {
-                        String[] keyValue = campo.split(":\\s*");
-                        if (keyValue.length == 2 && keyValue[1].trim().replace("\"", "").equals("Director")) {
+                    String[] keyValue = campo.split(":\\s*");
+                    if (keyValue.length == 2) {
+                        String key = keyValue[0].trim().replace("\"", "");
+                        String value = keyValue[1].trim().replace("\"", "");
+
+                        if (key.equals("job") && value.equals("Director")) {
                             isDirector = true;
-                        }
-                    }
-                    if (campo.contains("\"id\":")) {
-                        String[] keyValue = campo.split(":\\s*");
-                        if (keyValue.length == 2) {
-                            idStr = keyValue[1].trim().replace("\"", "");
+                        } else if (key.equals("id")) {
+                            try {
+                                id = Integer.parseInt(value);
+                            } catch (NumberFormatException ignored) {}
+                        } else if (key.equals("name")) {
+                            name = value;
                         }
                     }
                 }
 
-                if (isDirector && idStr != null) {
-                    try {
-                        directorId = Integer.parseInt(idStr);
-                        break; // Solo necesitamos el primer director
-                    } catch (NumberFormatException ignored) {}
+                if (isDirector && id != -1 && name != null) {
+                    Director director = new Director(id, name);
+                    director.agregarPelicula(idMovie);
+                    if (!directores.contains(id)) {
+                        directores.put(id, director);
+                    }
                 }
             } catch (Exception ignored) {}
         }
-
-        return directorId;
     }
 
 

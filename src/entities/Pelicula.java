@@ -8,7 +8,7 @@ public class Pelicula {
     private double revenue;
     private MyLinkedListImpl<Genero> listaGeneros;
     private Integer idColeccion;
-    private MyLinkedListImpl<Calificacion> listaRatings;
+    private MyLinkedListImpl<Calificacion> listaRatings = new MyLinkedListImpl<>();
 
     public Pelicula() {}
 
@@ -19,6 +19,7 @@ public class Pelicula {
         this.revenue = revenue;
         this.listaGeneros = listaGeneros;
         this.idColeccion = idColeccion;
+
     }
 
     public void agregarRating(Calificacion c) {
