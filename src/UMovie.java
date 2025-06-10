@@ -1,10 +1,19 @@
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.opencsv.exceptions.CsvValidationException;
 import entities.*;
 import tads.HashT.*;
 import tads.LinkedList.MyLinkedListImpl;
-
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+
 
 public class UMovie {
     private MyHashMap<Integer, Pelicula> peliculas;
@@ -18,7 +27,7 @@ public class UMovie {
         peliculas = new MyHashMap<>(50000);
         usuarios = new MyHashMap<>(1000000);
         sagas = new MyHashMap<>(50000);
-        actores = new MyHashMap<>(5000000);
+        actores = new MyHashMap<>(1000000);
         directores = new MyHashMap<>(5000000);
 
     }
@@ -88,8 +97,7 @@ public class UMovie {
             }
 
             System.out.println("Películas cargadas: " + count); //prueba
-            System.out.println(peliculas.size());
-            System.out.println(sagas.size());
+
 
 
         } catch (IOException e) {
@@ -219,7 +227,6 @@ public class UMovie {
                     }
                     if (usuario != null) {
                         usuario.agregarCalificacion(c);
-                        System.out.printf(usuario.getCalificaciones().size() + " calificaciones encontrada.\n");
                     }
 
 
@@ -235,157 +242,123 @@ public class UMovie {
 
     }
 
+
+
     public void cargarCreditos() {
-        try (BufferedReader br = new BufferedReader(new FileReader("resources/credits.csv"))) {
-            String line;
-            br.readLine(); // Saltarse el header
+        try (CSVReader csvReader = new CSVReader(new FileReader("resources/credits.csv"))) {
+            csvReader.readNext(); // Saltar el header
             int count = 0;
-            System.out.println("entro  cargar creditos");
-            while ((line = br.readLine()) != null) {
-                // Acumular líneas hasta que haya al menos 3 columnas
+            System.out.println("Iniciando carga de créditos");
 
-                    String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                    if (parts.length >= 3) {
-                        try {
-                            // Parsear el ID de la película (última columna)
-                            int movieId = Integer.parseInt(parts[2].trim());
-                            System.out.println(movieId + " id");
-
-                            // Parsear actores, crearlos y agregarlos al hash con su pelicula
-                            parseActores(parts[0].trim(), movieId);
-
-                            // Parsear el campo 'crew' para obtener el ID del director
-                            parseDirector(parts[1].trim(), movieId);
-
-                            //crear cada actor si no existe y asociarlos a pelicula
-                            //crear director si no existe y asociarlo a pelicula
-
-                            count++;
-                        } catch (Exception e) {
-                            System.out.println("Error en línea: " + e.getMessage());
+            String[] parts;
+            while ((parts = csvReader.readNext()) != null) {
+                if (parts.length >= 3) {
+                    try {
+                        // Parsear el ID de la película (última columna)
+                        int movieId = Integer.parseInt(parts[2].trim());
+                        if (!peliculas.contains(movieId)) {
+                            System.out.println("La pelicula no existe: " + movieId);
+                            continue;
                         }
+                        // Parsear actores
+                        parseActores(parts[0].trim(), movieId);
 
-                    } else {
-                        String nextLine = br.readLine();
-                        if (nextLine == null) break; // Fin del archivo
-                        line += "\n" + nextLine;
+                        // Parsear el campo 'crew' para obtener el director
+                        parseDirector(parts[1].trim(), movieId);
+
+                        count++;
+
+                    } catch (NumberFormatException e) {
+                        System.out.println("Error parseando movieId en línea: " + String.join(",", parts) + ", mensaje: " + e.getMessage());
+                    } catch (Exception e) {
+                        System.out.println("Error procesando línea: " + String.join(",", parts) + ", mensaje: " + e.getMessage());
                     }
-
+                } else {
+                    System.out.println("Línea inválida (menos de 3 columnas): " + String.join(",", parts));
+                }
             }
 
             System.out.println("Créditos cargados: " + count);
+            System.out.println(peliculas.size() + " peliculas");
+            System.out.println(sagas.size() + " sagas");
+            System.out.println(usuarios.size() + " usuarios");
+            System.out.println(actores.size() + " actores");
+            System.out.println(directores.size() + " directores");
 
-        } catch (IOException e) {
-            System.out.println("Error loading credits.csv: " + e.getMessage());
+        } catch (IOException | CsvValidationException e) {
+            System.out.println("Error cargando credits.csv: " + e.getMessage());
         }
     }
 
     // Función auxiliar para parsear la lista de actores
     private void parseActores(String castRaw, Integer idMovie) {
-
         if (castRaw == null || castRaw.trim().isEmpty() || castRaw.equals("[]")) {
             return;
         }
 
-        // Reemplazar comillas simples por dobles para consistencia
-        castRaw = castRaw.replace("'", "\"");
+        try {
+            Gson gson = new Gson();
+            JsonArray actorsArray = gson.fromJson(castRaw, JsonArray.class);
+            int actorCount = 0;
 
-        // Dividir en objetos individuales
-        String[] objetos = castRaw.split("\\},\\s*\\{");
+            for (int i = 0; i < actorsArray.size(); i++) {
+                try {
+                    JsonObject actorObj = actorsArray.get(i).getAsJsonObject();
+                    int id = actorObj.has("id") ? actorObj.get("id").getAsInt() : -1;
+                    String name = actorObj.has("name") ? actorObj.get("name").getAsString() : null;
 
-        for (String obj : objetos) {
-            try {
-                // Limpiar el objeto
-                obj = obj.replace("[", "").replace("]", "").replace("{", "").replace("}", "").trim();
-                String[] campos = obj.split(",\\s*");
-
-                int id = -1;
-                String name = null;
-
-                for (String campo : campos) {
-                    String[] keyValue = campo.split(":\\s*");
-                    if (keyValue.length == 2) {
-                        String key = keyValue[0].trim().replace("\"", "");
-                        String value = keyValue[1].trim().replace("\"", "");
-
-                        if (key.equals("id")) {
-                            try {
-                                id = Integer.parseInt(value);
-                            } catch (NumberFormatException ignored) {}
-                        } else if (key.equals("name")) {
-                            name = value;
+                    if (id != -1 && name != null) {
+                        Actor actor = new Actor(id, name);
+                        actor.agregarPelicula(idMovie);
+                        if(!actores.contains(id)) {
+                            actores.put(id, actor);
                         }
+                        actorCount++;
                     }
+                } catch (Exception e) {
+                    System.out.println("Error procesando actor en índice " + i + " de movieId " + idMovie + ": " + e.getMessage());
                 }
+            }
 
-                if (id != -1 && name != null) {
-                    Actor actor = new Actor(id, name);
-                    actor.agregarPelicula(idMovie);
-                    if (!actores.contains(id)) {
-                        actores.put(id, actor);
-                    }
-
-                }
-            } catch (Exception ignored) {}
+            if (actorCount % 100 == 0) {
+                System.out.println("Procesados " + actorCount + " actores para movieId " + idMovie);
+            }
+        } catch (JsonParseException e) {
+            System.out.println("Error parseando JSON para movieId " + idMovie + ": " + e.getMessage());
         }
-
-
     }
 
-    // Función auxiliar para parsear el director
     private void parseDirector(String crewRaw, Integer idMovie) {
-        int directorId = -1; // Valor por defecto si no se encuentra director
-
         if (crewRaw == null || crewRaw.trim().isEmpty() || crewRaw.equals("[]")) {
             return;
         }
 
-        // Reemplazar comillas simples por dobles para consistencia
-        crewRaw = crewRaw.replace("'", "\"");
+        try {
+            Gson gson = new Gson();
+            JsonArray crewArray = gson.fromJson(crewRaw, JsonArray.class);
 
-        // Dividir en objetos individuales
-        String[] objetos = crewRaw.split("\\},\\s*\\{");
+            for (int i = 0; i < crewArray.size(); i++) {
+                try {
+                    JsonObject crewObj = crewArray.get(i).getAsJsonObject();
+                    if (crewObj.has("job") && crewObj.get("job").getAsString().equals("Director")) {
+                        int id = crewObj.has("id") ? crewObj.get("id").getAsInt() : -1;
+                        String name = crewObj.has("name") ? crewObj.get("name").getAsString() : null;
 
-        for (String obj : objetos) {
-            try {
-                // Limpiar el objeto
-                obj = obj.replace("[", "").replace("]", "").replace("{", "").replace("}", "").trim();
-                String[] campos = obj.split(",\\s*");
-
-                boolean isDirector = false;
-                String idStr = null;
-
-                int id = -1;
-                String name = null;
-
-                for (String campo : campos) {
-                    String[] keyValue = campo.split(":\\s*");
-                    if (keyValue.length == 2) {
-                        String key = keyValue[0].trim().replace("\"", "");
-                        String value = keyValue[1].trim().replace("\"", "");
-
-                        if (key.equals("job") && value.equals("Director")) {
-                            isDirector = true;
-                        } else if (key.equals("id")) {
-                            try {
-                                id = Integer.parseInt(value);
-                            } catch (NumberFormatException ignored) {}
-                        } else if (key.equals("name")) {
-                            name = value;
+                        if (id != -1 && name != null) {
+                            Director director = new Director(id, name);
+                            director.agregarPelicula(idMovie);
+                            if(!directores.contains(id)) {
+                                directores.put(id, director);
+                            }
+                            return; // Salir tras encontrar el primer director
                         }
                     }
+                } catch (Exception e) {
+                    System.out.println("Error procesando miembro del crew en índice " + i + " de movieId " + idMovie + ": " + e.getMessage());
                 }
-
-                if (isDirector && id != -1 && name != null) {
-                    Director director = new Director(id, name);
-                    director.agregarPelicula(idMovie);
-                    if (!directores.contains(id)) {
-                        directores.put(id, director);
-                    }
-                    return;
-
-                }
-            } catch (Exception ignored) {}
+            }
+        } catch (JsonParseException e) {
+            System.out.println("Error parseando JSON de crew para movieId " + idMovie + ": " + e.getMessage());
         }
     }
 
