@@ -29,7 +29,7 @@ public class Main {
                     long inicio = System.currentTimeMillis();
                     objUMovie.cargarPeliculas();
                     objUMovie.cargarRatings();
-                    //objUMovie.cargarCreditos();
+                    objUMovie.cargarCreditos();
                     long fin = System.currentTimeMillis();
                     System.out.println("Carga de datos exitosa, tiempo de ejecución de la carga: " + (fin - inicio) + " ms\n");
                     break;

@@ -193,13 +193,11 @@ public class UMovie {
                 try {
                     int userId = Integer.parseInt(parts[0]);
                     int movieId = Integer.parseInt(parts[1]);
-                    System.out.println(movieId);
                     double rating = Double.parseDouble(parts[2]);
                     long timestamp = Long.parseLong(parts[3]);
 
 
                     if (!usuarios.contains(userId)) {
-                        System.out.println("usuario nuevo");
                         Usuario nuevoUsuario = new Usuario(userId);
                         usuarios.put(userId, nuevoUsuario);
                     }
@@ -208,13 +206,9 @@ public class UMovie {
                     Pelicula pelicula = peliculas.get(movieId);
                     if (pelicula != null) {
                         pelicula.agregarRating(c);
-                        System.out.println("pelicula encontrada");
                     } else {
-                        System.out.println("Pelicula no encontrada: " + movieId);
                         continue;
                     }
-
-                    //terminar de ver donde tengo list/hash guardada
 
                     count++;
 
@@ -235,15 +229,16 @@ public class UMovie {
             String line;
             br.readLine(); // Saltarse el header
             int count = 0;
-
+            System.out.println("entro  cargar creditos");
             while ((line = br.readLine()) != null) {
                 // Acumular líneas hasta que haya al menos 3 columnas
-                while (true) {
+
                     String[] parts = line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
                     if (parts.length >= 3) {
                         try {
                             // Parsear el ID de la película (última columna)
                             int movieId = Integer.parseInt(parts[2].trim());
+                            System.out.println(movieId + " id");
 
                             // Parsear actores, crearlos y agregarlos al hash con su pelicula
                             parseActores(parts[0].trim(), movieId);
@@ -258,13 +253,13 @@ public class UMovie {
                         } catch (Exception e) {
                             System.out.println("Error en línea: " + e.getMessage());
                         }
-                        break;
+
                     } else {
                         String nextLine = br.readLine();
                         if (nextLine == null) break; // Fin del archivo
                         line += "\n" + nextLine;
                     }
-                }
+
             }
 
             System.out.println("Créditos cargados: " + count);
@@ -377,6 +372,8 @@ public class UMovie {
                     if (!directores.contains(id)) {
                         directores.put(id, director);
                     }
+                    return;
+
                 }
             } catch (Exception ignored) {}
         }

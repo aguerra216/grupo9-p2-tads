@@ -2,11 +2,12 @@ package entities;
 
 import tads.LinkedList.MyLinkedListImpl;
 
-public class Usuario extends Persona {
+public class Usuario {
     MyLinkedListImpl<Calificacion> calificaciones;
+    private Integer id;
 
     public Usuario(int id) {
-        super(id);
+        this.id = id;
     }
 
     public MyLinkedListImpl<Calificacion> getCalificaciones() {
@@ -18,6 +19,12 @@ public class Usuario extends Persona {
     }
 
     public void agregarCalificacion(Calificacion cal) {
+
         calificaciones.add(cal);
     }
+
+
+
+
+
 }
