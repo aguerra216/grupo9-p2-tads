@@ -18,8 +18,8 @@ public class UMovie {
         peliculas = new MyHashMap<>(50000);
         usuarios = new MyHashMap<>(1000000);
         sagas = new MyHashMap<>(50000);
-        actores = new MyHashMap<>(50000);
-        directores = new MyHashMap<>(50000);
+        actores = new MyHashMap<>(5000000);
+        directores = new MyHashMap<>(5000000);
 
     }
 
@@ -28,6 +28,8 @@ public class UMovie {
             BufferedReader br = new BufferedReader(new FileReader("resources/movies_metadata.csv"))) {
             String line;
             br.readLine(); // Saltarse el header
+
+
             int count = 0;
 
             while ((line = br.readLine()) != null) {
@@ -50,9 +52,14 @@ public class UMovie {
                             }
                             String collectionData = parts[1];
                             Saga objsaga = parseSaga(collectionData);
-                            if(objsaga.getId() == null && objsaga.getNombre() == null) {
+
+                            if (parseSaga(collectionData) == null) {
+                                objsaga = new Saga();
                                 objsaga.setId(id);
                                 objsaga.setNombre(title);
+                                if (!sagas.contains(id)) {
+                                    sagas.put(id, objsaga);
+                                }
 
                             }
 
@@ -81,6 +88,8 @@ public class UMovie {
             }
 
             System.out.println("Películas cargadas: " + count); //prueba
+            System.out.println(peliculas.size());
+            System.out.println(sagas.size());
 
 
         } catch (IOException e) {
@@ -91,8 +100,7 @@ public class UMovie {
     //Funcion que devuelve la saga y la agrega si no esta al hash
     public Saga parseSaga(String sagaRaw) {
         if (sagaRaw == null || sagaRaw.trim().isEmpty() || sagaRaw.equals("null")) {
-            Saga objsaga = new Saga();
-            return objsaga;
+            return null;
         }
 
         sagaRaw = sagaRaw.replace("'", "\"").trim();
@@ -271,7 +279,6 @@ public class UMovie {
 
     // Función auxiliar para parsear la lista de actores
     private void parseActores(String castRaw, Integer idMovie) {
-        MyLinkedListImpl<Integer> actorIds = new MyLinkedListImpl<>();
 
         if (castRaw == null || castRaw.trim().isEmpty() || castRaw.equals("[]")) {
             return;
@@ -311,7 +318,7 @@ public class UMovie {
                 if (id != -1 && name != null) {
                     Actor actor = new Actor(id, name);
                     actor.agregarPelicula(idMovie);
-                    if (!actorIds.contains(id)) {
+                    if (!actores.contains(id)) {
                         actores.put(id, actor);
                     }
 
