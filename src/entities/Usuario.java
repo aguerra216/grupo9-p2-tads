@@ -6,8 +6,10 @@ public class Usuario {
     MyLinkedListImpl<Calificacion> calificaciones;
     private Integer id;
 
+
     public Usuario(int id) {
         this.id = id;
+        this.calificaciones = new MyLinkedListImpl<>();
     }
 
     public MyLinkedListImpl<Calificacion> getCalificaciones() {

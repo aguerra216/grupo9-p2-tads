@@ -211,14 +211,17 @@ public class UMovie {
                     }
                     Calificacion c = new Calificacion(userId, movieId, rating, timestamp);
 
+                    Usuario usuario = usuarios.get(userId);
                     Pelicula pelicula = peliculas.get(movieId);
                     if (pelicula != null) {
                         pelicula.agregarRating(c);
-                    } else {
-                        continue;
+                        count++;
+                    }
+                    if (usuario != null) {
+                        usuario.agregarCalificacion(c);
+                        System.out.printf(usuario.getCalificaciones().size() + " calificaciones encontrada.\n");
                     }
 
-                    count++;
 
                 } catch (Exception e) {
                     System.out.println("Error parsing rating: " + line + e.getMessage());
