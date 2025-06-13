@@ -193,4 +193,12 @@ public class MyQueueImpl<T> implements MyQueue<T>{
             addLast(value);
         }
     }
+
+    @Override
+    public T peek() {
+        if (size == 0) {
+            throw new EmptyStackException();
+        }
+        return head.getValue();
+    }
 }

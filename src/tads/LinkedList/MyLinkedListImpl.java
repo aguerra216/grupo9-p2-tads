@@ -3,13 +3,22 @@ package tads.LinkedList;
 import exceptions.EmptyQueueException;
 import exceptions.EmptyStackException;
 
-public class MyLinkedListImpl<T> implements MyList<T> {
+import java.util.Iterator;
+
+public class MyLinkedListImpl<T> implements MyList<T>, Iterable<T> {
     private Node<T> first;
     private Node<T> last;
+    private int size; // Nuevo campo para almacenar el tamaño
 
     public MyLinkedListImpl() {
         this.first = null;
         this.last = null;
+        this.size = 0; // Inicializar tamaño en 0
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new MyLinkedListIterator<>(first);
     }
 
     @Override
@@ -24,43 +33,31 @@ public class MyLinkedListImpl<T> implements MyList<T> {
 
     private void addToBeginning(T value) {
         if (value != null) {
-
             Node<T> elementToAdd = new Node<>(value);
 
             if (this.first == null) {
-
                 this.first = elementToAdd;
                 this.last = elementToAdd;
-
             } else {
-
                 elementToAdd.setNext(this.first);
                 this.first = elementToAdd;
             }
-
-        } else {
-
+            this.size++; // Incrementar tamaño
         }
     }
 
     private void addToTheEnd(T value) {
         if (value != null) {
-
             Node<T> elementToAdd = new Node<>(value);
 
             if (this.first == null) {
-
                 this.first = elementToAdd;
                 this.last = elementToAdd;
-
             } else {
-
                 this.last.setNext(elementToAdd);
                 this.last = elementToAdd;
             }
-
-        } else {
-
+            this.size++; // Incrementar tamaño
         }
     }
 
@@ -69,19 +66,13 @@ public class MyLinkedListImpl<T> implements MyList<T> {
         int tempPosition = 0;
         Node<T> temp = this.first;
 
-
         while (temp != null && tempPosition != position) {
-
             temp = temp.getNext();
             tempPosition++;
-
         }
 
-        if (tempPosition == position) {
-
-
+        if (tempPosition == position && temp != null) {
             valueToReturn = temp.getValue();
-
         }
 
         return valueToReturn;
@@ -92,15 +83,11 @@ public class MyLinkedListImpl<T> implements MyList<T> {
         Node<T> temp = this.first;
 
         while (temp != null && !temp.getValue().equals(value)) {
-
             temp = temp.getNext();
-
         }
 
         if (temp != null) {
-
             contains = true;
-
         }
 
         return contains;
@@ -110,46 +97,28 @@ public class MyLinkedListImpl<T> implements MyList<T> {
         Node<T> beforeSearchValue = null;
         Node<T> searchValue = this.first;
 
-
         while (searchValue != null && !searchValue.getValue().equals(value)) {
-
             beforeSearchValue = searchValue;
             searchValue = searchValue.getNext();
-
         }
 
         if (searchValue != null) {
-
             if (searchValue == this.first && searchValue != this.last) {
-
                 Node<T> temp = this.first;
                 this.first = this.first.getNext();
-
                 temp.setNext(null);
-
-
             } else if (searchValue == this.last && searchValue != this.first) {
-
                 beforeSearchValue.setNext(null);
                 this.last = beforeSearchValue;
-
-
             } else if (searchValue == this.last && searchValue == this.first) {
-
                 this.first = null;
                 this.last = null;
-
             } else {
-
                 beforeSearchValue.setNext(searchValue.getNext());
                 searchValue.setNext(null);
-
             }
-
-        } else {
-
+            this.size--; // Decrementar tamaño
         }
-
     }
 
     private T removeLast() {
@@ -157,26 +126,14 @@ public class MyLinkedListImpl<T> implements MyList<T> {
 
         if (this.last != null) {
             valueToRemove = this.last.getValue();
-
-            remove(valueToRemove);
+            remove(valueToRemove); // remove() ya decrementa size
         }
 
         return valueToRemove;
     }
 
     public int size() {
-        int size = 0;
-
-        Node<T> temp = this.first;
-
-        while (temp != null) {
-
-            temp = temp.getNext();
-            size++;
-
-        }
-
-        return size;
+        return size; // Retornar el tamaño almacenado
     }
 
 
@@ -193,6 +150,21 @@ public class MyLinkedListImpl<T> implements MyList<T> {
 
         return removeLast();
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        Node<T> actual = first;
+        while (actual != null) {
+            sb.append(actual.getValue());
+            if (actual.getNext() != null) sb.append(", ");
+            actual = actual.getNext();
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
 
 
 

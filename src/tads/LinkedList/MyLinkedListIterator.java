@@ -1,26 +1,26 @@
 package tads.LinkedList;
-
+import java.util.NoSuchElementException;
 import java.util.Iterator;
 
 public class MyLinkedListIterator<T> implements Iterator<T> {
+    private Node<T> current;
 
-
-    private Node<T> node;
-
-    public MyLinkedListIterator(Node<T> node) {
-        this.node = node;
+    public MyLinkedListIterator(Node<T> first) {
+        this.current = first;
     }
-
 
     @Override
     public boolean hasNext() {
-        return (node != null);
+        return current != null;
     }
 
     @Override
     public T next() {
-        T valueToReturn = node.getValue();
-        node = node.getNext();
-        return valueToReturn;
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
+        T value = current.getValue();
+        current = current.getNext();
+        return value;
     }
 }

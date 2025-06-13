@@ -85,8 +85,8 @@ public class MyHashMap<Key, Value> implements HashInter<Key, Value> {
 
     @Override
 
-    public MyList<Key> keys() {
-        MyList<Key> keys = new MyLinkedListImpl<>();
+    public MyLinkedListImpl<Key> keys() {
+        MyLinkedListImpl<Key> keys = new MyLinkedListImpl<>();
         for (int i = 0; i < capacity; i++) {
             MyList<Node<Key, Value>> bucket = table[i];
             for (int j = 0; j < bucket.size(); j++) {
@@ -97,8 +97,8 @@ public class MyHashMap<Key, Value> implements HashInter<Key, Value> {
     }
 
     @Override
-    public MyList<Value> values() {
-        MyList<Value> values = new MyLinkedListImpl<>();
+    public MyLinkedListImpl<Value> values() {
+        MyLinkedListImpl<Value> values = new MyLinkedListImpl<>();
         for (int i = 0; i < capacity; i++) {
             MyList<Node<Key, Value>> bucket = table[i];
             for (int j = 0; j < bucket.size(); j++) {

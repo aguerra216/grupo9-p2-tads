@@ -13,8 +13,6 @@ public class Main {
     static UMovie objUMovie = new UMovie();
 
     public static void main(String[] args) {
-        //UMovie objUMovie = new UMovie();
-
         Scanner scanner = new Scanner(System.in);
         boolean salir = false;
 
@@ -34,8 +32,7 @@ public class Main {
                     objUMovie.cargarRatings();
                     objUMovie.cargarCreditos();
                     long fin = System.currentTimeMillis();
-                    System.out.println("Tiempo de carga: " + (fin-inicio));
-
+                    System.out.println("Carga de datos exitosa, tiempo de ejecución de la carga: " + (fin - inicio));
                     break;
 
                 case 2:
@@ -78,13 +75,21 @@ public class Main {
                     long inicio = System.currentTimeMillis();
                     objUMovie.top5PeliculasPorIdioma(objUMovie.getPeliculas());
                     long fin = System.currentTimeMillis();
-                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin-inicio));
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin-inicio) + " ms");
                     break;
                 case 2:
                     System.out.println("Mostrando Top 10 de películas con mejor calificación media...");
+                    long inicio2 = System.currentTimeMillis();
+                    objUMovie.top10PeliculasCalificacionMedia(objUMovie.getPeliculas());
+                    long fin2 = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin2-inicio2) + " ms");
                     break;
                 case 3:
                     System.out.println("Mostrando Top 5 de colecciones con más ingresos...");
+                    long inicio3 = System.currentTimeMillis();
+                    objUMovie.top5ColeccionesIngresos(objUMovie.getSagas());
+                    long fin3 = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin3-inicio3) + " ms");
                     break;
                 case 4:
                     System.out.println("Mostrando Top 10 de directores con mejor calificación...");

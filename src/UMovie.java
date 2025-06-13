@@ -54,25 +54,20 @@ public class UMovie {
                             revenue = 0.0;
                         }
                         String collectionData = parts[1];
-                        Saga objsaga = parseSaga(collectionData);
+                        Saga objsaga = parseSaga(collectionData, id, title);
 
-                        if (objsaga == null) {
-                            objsaga = new Saga();
-                            objsaga.setId(id);
-                            objsaga.setNombre(title);
-                            if (!sagas.contains(id)) {
-                                sagas.put(id, objsaga);
-                            }
+                        if (!sagas.contains(objsaga.getId())) {
+                            sagas.put(objsaga.getId(), objsaga);
+                        }
+                        objsaga = sagas.get(objsaga.getId());
+
+                        Pelicula objPelicula = new Pelicula(id,title,language,revenue,listaGeneros,objsaga.getId());
+
+                        if (!objsaga.getPeliculas().contains(id)) {
+                            objsaga.agregarPelicula(id);
                         }
 
-                        Pelicula objPelicula = new Pelicula();
-                        objPelicula.setIdPelicula(id);
-                        objPelicula.setTitulo(title);
-                        objPelicula.setIdiomaOriginal(language);
-                        objPelicula.setListaGeneros(listaGeneros);
-                        objPelicula.setRevenue(revenue);
-                        objPelicula.setIdColeccion(objsaga.getId());
-                        objsaga.agregarPelicula(id);
+
 
                         peliculas.put(id, objPelicula);
 
@@ -89,10 +84,13 @@ public class UMovie {
         }
     }
 
-    //Funcion que devuelve la saga y la agrega si no esta al hash
-    public Saga parseSaga(String sagaRaw) {
+    //Funcion que devuelve la saga del String
+    public Saga parseSaga(String sagaRaw, Integer idPelicula, String titulo) {
         if (sagaRaw == null || sagaRaw.trim().isEmpty() || sagaRaw.equals("null")) {
-            return null;
+            Saga saga = new Saga();
+            saga.setId(idPelicula);
+            saga.setNombre(titulo);
+            return saga;
         }
 
         sagaRaw = sagaRaw.replace("'", "\"").trim();
@@ -123,11 +121,10 @@ public class UMovie {
             Saga nueva = new Saga();
 
             if (id != -1 && name != null) {
+
                 nueva.setId(id);
                 nueva.setNombre(name);
-                if (!sagas.contains(id)) {
-                    sagas.put(id, nueva);
-                }
+                return nueva;
             }
             return nueva;
 
@@ -371,6 +368,7 @@ public class UMovie {
             int ratingCompare = Integer.compare(m1.getListaRatings().size(), m2.getListaRatings().size());
             return ratingCompare != 0 ? ratingCompare : m1.getTitulo().compareTo(m2.getTitulo()); // Tiebreaker by title
         };
+
         // Map to store MyQueueImpl for each language
         MyHashMap<String, MyQueueImpl<Pelicula>> queuesByLanguage = new MyHashMap<>(5);
         queuesByLanguage.put("en", new MyQueueImpl<>(ratingsComparator));
@@ -379,10 +377,9 @@ public class UMovie {
         queuesByLanguage.put("it", new MyQueueImpl<>(ratingsComparator));
         queuesByLanguage.put("pt", new MyQueueImpl<>(ratingsComparator));
 
-        // Iterate through the hash values
-        MyList<Pelicula> listaPeliculas = peliculas.values();
-        for (int i = 0; i < listaPeliculas.size(); i++) {
-            Pelicula movie = listaPeliculas.get(i);
+        // Iterate through the hash values using for-each
+        MyLinkedListImpl<Pelicula> listaPeliculas = peliculas.values();
+        for (Pelicula movie : listaPeliculas) {
             String language = movie.getIdiomaOriginal();
             if (queuesByLanguage.contains(language)) {
                 MyQueueImpl<Pelicula> queue = queuesByLanguage.get(language);
@@ -390,36 +387,31 @@ public class UMovie {
                     queue.enqueueWithPriority(movie);
                 } else {
                     // Peek the head (smallest ratings count)
-                    Iterator<Pelicula> iterator = queue.iterator();
-                    if (iterator.hasNext()) {
-                        Pelicula minMovie = iterator.next();
-                        if (movie.getListaRatings().size() > minMovie.getListaRatings().size()) {
-                            queue.dequeue(); // Remove the movie with fewest ratings
-                            queue.enqueueWithPriority(movie); // Add the new movie
-                        }
+                    Pelicula minMovie = queue.peek();
+                    if (movie.getListaRatings().size() > minMovie.getListaRatings().size()) {
+                        queue.dequeue(); // Remove the movie with fewest ratings
+                        queue.enqueueWithPriority(movie); // Add the new movie
                     }
                 }
             }
         }
 
 
-
         // Display top 5 movies for each language
-        String[] languagesMostrar = {"en", "es", "fr", "it", "pt"};
-        for (String language : languagesMostrar) {
+        String[] lenguajesMostrar = {"en", "es", "fr", "it", "pt"};
+        for (String language : lenguajesMostrar) {
             System.out.println("Top 5 películas en " + language + ":");
             MyQueueImpl<Pelicula> queue = queuesByLanguage.get(language);
             if (queue == null || queue.isEmpty()) {
                 System.out.println("  No hay películas en este idioma.");
             } else {
-                MyLinkedListImpl<Pelicula> tempMovies = new MyLinkedListImpl<>();
+                int indice = 5;
                 while (!queue.isEmpty()) {
-                    tempMovies.add(queue.dequeue()); // Add to end for ascending order
-                }
-                for (int i = 0; i < tempMovies.size(); i++) {
-                    Pelicula movie = tempMovies.get(i);
-                    System.out.printf("  %d. %s (ID: %d, Calificaciones: %d)%n",
-                            i + 1, movie.getTitulo(), movie.getIdPelicula(), movie.getListaRatings().size());
+                    Pelicula movie = queue.dequeue();
+                    System.out.printf("  %d. %d, %s, %d, %s%n",
+                            indice , movie.getIdPelicula(), movie.getTitulo(), movie.getListaRatings().size(), movie.getIdiomaOriginal());
+                    indice--;
+
                 }
             }
             System.out.println();
@@ -427,6 +419,120 @@ public class UMovie {
 
     }
 
+
+    public void top10PeliculasCalificacionMedia(MyHashMap<Integer, Pelicula> peliculas) {
+        // Clase interna para almacenar película y su calificación media temporalmente
+        class PeliculaConMedia {
+            Pelicula pelicula;
+            double calificacionMedia;
+
+            PeliculaConMedia(Pelicula pelicula, double calificacionMedia) {
+                this.pelicula = pelicula;
+                this.calificacionMedia = calificacionMedia;
+            }
+        }
+
+        // Comparator para el min-heap basado en calificación media
+        Comparator<PeliculaConMedia> ratingAvgComparator = (pm1, pm2) -> {
+            int avgCompare = Double.compare(pm1.calificacionMedia, pm2.calificacionMedia);
+            return avgCompare != 0 ? avgCompare : pm1.pelicula.getTitulo().compareTo(pm2.pelicula.getTitulo());
+        };
+
+        // Crear min-heap para las 10 mejores películas
+        MyQueueImpl<PeliculaConMedia> top10Queue = new MyQueueImpl<>(ratingAvgComparator);
+        MyLinkedListImpl<Pelicula> listaPeliculas = peliculas.values();
+
+        // Iterar sobre las películas
+        for (Pelicula movie : listaPeliculas) {
+            // Calcular la calificación media solo una vez por película
+            double media = obtenerCalificacionMedia(movie.getIdPelicula());
+            PeliculaConMedia peliculaConMedia = new PeliculaConMedia(movie, media);
+
+            if (top10Queue.getSize() < 10) {
+                top10Queue.enqueueWithPriority(peliculaConMedia);
+            } else {
+                PeliculaConMedia minPelicula = top10Queue.peek();
+                if (media > minPelicula.calificacionMedia) {
+                    top10Queue.dequeue();
+                    top10Queue.enqueueWithPriority(peliculaConMedia);
+                }
+            }
+        }
+
+        System.out.println("Top 10 películas por calificación media:");
+        if (top10Queue.isEmpty()) {
+            System.out.println("  No hay películas con calificaciones.");
+        } else {
+            int indice = 10;
+            while(!top10Queue.isEmpty()) {
+                PeliculaConMedia movie = top10Queue.dequeue();
+                System.out.printf("  %d. %d, %s, %.2f%n",
+                        indice, movie.pelicula.getIdPelicula(), movie.pelicula.getTitulo(), movie.calificacionMedia);
+                indice--;
+            }
+        }
+        System.out.println();
+    }
+
+    private double obtenerCalificacionMedia(Integer id) {
+        Pelicula pelicula = peliculas.get(id);
+        //Si tiene menos de 100 rating no me interesa la pelicula
+        if (pelicula.getListaRatings().size() < 100) {
+            return 0;
+        }
+        double calificacionMedia = 0.0;
+        for (Calificacion calificacion : pelicula.getListaRatings()) {
+            calificacionMedia+=calificacion.getRating();
+        }
+        return calificacionMedia / pelicula.getListaRatings().size();
+    }
+
+    public void top5ColeccionesIngresos(MyHashMap<Integer, Saga> sagas) {
+        // Comparator para el min-heap basado en revenue
+        Comparator<Saga> revenueComparator = (s1, s2) -> {
+            int revenueCompare = Double.compare(obtenerRevenue(s1.getId()), obtenerRevenue(s2.getId()));
+            return revenueCompare != 0 ? revenueCompare : s1.getNombre().compareTo(s2.getNombre());
+        };
+
+        // Crear min-heap para las 10 mejores películas
+        MyQueueImpl<Saga> top10Sagas = new MyQueueImpl<>(revenueComparator);
+        MyLinkedListImpl<Saga> listaSagas = sagas.values();
+        for (Saga saga : listaSagas) {
+            if (top10Sagas.getSize() < 5) {
+                top10Sagas.enqueueWithPriority(saga);
+            } else {
+                Saga minSaga = top10Sagas.peek();
+                if (obtenerRevenue(minSaga.getId()) < obtenerRevenue(saga.getId())) {
+                    top10Sagas.dequeue();
+                    top10Sagas.enqueueWithPriority(saga);
+                }
+
+            }
+        }
+        System.out.println("Top 10 sagas con más revenue: ");
+        if (top10Sagas.isEmpty()) {
+            System.out.println("  No hay películas con calificaciones.");
+        } else {
+            int indice = 5;
+            while(!top10Sagas.isEmpty()) {
+                Saga saga = top10Sagas.dequeue();
+                System.out.printf("  %d. %d, %s, %d, %s, %,.2f%n",
+                        indice, saga.getId(), saga.getNombre(),saga.getPeliculas().size(), saga.getPeliculas(), obtenerRevenue(saga.getId()));
+                indice--;
+            }
+        }
+        System.out.println();
+    }
+
+    private double obtenerRevenue(Integer id) {
+        Saga saga = sagas.get(id);
+        double revenue = 0.0;
+        for (Integer idPelicula : saga.getPeliculas()) {
+            Pelicula pelicula = peliculas.get(idPelicula);
+            revenue += pelicula.getRevenue();
+        }
+        return revenue;
+    }
 
     public MyHashMap<Integer, Pelicula> getPeliculas() {
         return peliculas;
