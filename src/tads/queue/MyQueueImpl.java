@@ -2,6 +2,7 @@ package tads.queue;
 
 import tads.LinkedList.*;
 
+import java.util.Comparator;
 import java.util.EmptyStackException;
 import java.util.Iterator;
 
@@ -10,11 +11,14 @@ public class MyQueueImpl<T> implements MyQueue<T>{
     private Node<T> head;
     private Node<T> tail;
     private int size;
+    private Comparator<T> comparator;
 
-    public MyQueueImpl() {
+
+    public MyQueueImpl(Comparator<T> comparator) {
         this.head = null;
         this.tail = null;
-        size = 0;
+        this.size = 0;
+        this.comparator = comparator;
     }
 
     @Override
@@ -156,41 +160,37 @@ public class MyQueueImpl<T> implements MyQueue<T>{
         return toReturn.getValue();
     }
 
-    private void addInOrder(T value){
-        if (size == 0){
+    private void addInOrder(T value) {
+        if (size == 0) {
             addFirst(value);
-        } else {
-            if ( value instanceof Comparable) {
-                if (((Comparable) head.getValue()).compareTo(value) < 0) {
-                    addFirst(value);
+        } else if (comparator != null) {
+            if (comparator.compare(head.getValue(), value) > 0) {
+                addFirst(value);
+            } else {
+                Node<T> temp = head.getNext();
+                Node<T> previous = head;
+                boolean added = false;
+
+                while (temp != null) {
+                    if (comparator.compare(temp.getValue(), value) > 0) {
+                        Node<T> newNode = new Node<>(value);
+                        previous.setNext(newNode);
+                        newNode.setNext(temp);
+                        added = true;
+                        break;
+                    }
+                    previous = temp;
+                    temp = temp.getNext();
+                }
+
+                if (!added) {
+                    addLast(value);
                 } else {
-                    Node<T> temp = head.getNext();
-                    Node<T> previous = head;
-                    boolean added = false;
-
-                    while (temp != null) {
-                        if (((Comparable) temp.getValue()).compareTo(value) < 0) {
-                            Node<T> newNode = new Node<>(value);
-                            previous.setNext(newNode);
-                            newNode.setNext(temp);
-                            added = true;
-                            break;
-                        } else {
-                            previous = temp;
-                            temp = temp.getNext();
-                        }
-                    }
-
-                    if (added) {
-                        size++;
-                    } else {
-                        addLast(value);
-                    }
+                    size++; // Increment only if inserted in the middle
                 }
             }
-            else{
-                addLast(value);
-            }
+        } else {
+            addLast(value);
         }
     }
 }

@@ -10,8 +10,11 @@ import java.util.Scanner;
 
 public class Main {
 
+    static UMovie objUMovie = new UMovie();
+
     public static void main(String[] args) {
-        UMovie objUMovie = new UMovie();
+        //UMovie objUMovie = new UMovie();
+
         Scanner scanner = new Scanner(System.in);
         boolean salir = false;
 
@@ -72,6 +75,10 @@ public class Main {
                 case 1:
                     // TODO: Implementar lógica real
                     System.out.println("Mostrando Top 5 de las películas que más calificaciones por idioma...");
+                    long inicio = System.currentTimeMillis();
+                    objUMovie.top5PeliculasPorIdioma(objUMovie.getPeliculas());
+                    long fin = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin-inicio));
                     break;
                 case 2:
                     System.out.println("Mostrando Top 10 de películas con mejor calificación media...");

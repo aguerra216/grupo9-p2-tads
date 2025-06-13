@@ -84,11 +84,13 @@ public class MyHashMap<Key, Value> implements HashInter<Key, Value> {
     }
 
     @Override
+
     public MyList<Key> keys() {
         MyList<Key> keys = new MyLinkedListImpl<>();
-        for (MyList<Node<Key, Value>> bucket : table) {
-            for (int i = 0; i < bucket.size(); i++) {
-                keys.add(bucket.get(i).key);
+        for (int i = 0; i < capacity; i++) {
+            MyList<Node<Key, Value>> bucket = table[i];
+            for (int j = 0; j < bucket.size(); j++) {
+                keys.add(bucket.get(j).key);
             }
         }
         return keys;
@@ -97,9 +99,10 @@ public class MyHashMap<Key, Value> implements HashInter<Key, Value> {
     @Override
     public MyList<Value> values() {
         MyList<Value> values = new MyLinkedListImpl<>();
-        for (MyList<Node<Key, Value>> bucket : table) {
-            for (int i = 0; i < bucket.size(); i++) {
-                values.add(bucket.get(i).value);
+        for (int i = 0; i < capacity; i++) {
+            MyList<Node<Key, Value>> bucket = table[i];
+            for (int j = 0; j < bucket.size(); j++) {
+                values.add(bucket.get(j).value);
             }
         }
         return values;

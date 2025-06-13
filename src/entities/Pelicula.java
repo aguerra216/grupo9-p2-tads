@@ -12,6 +12,19 @@ public class Pelicula {
 
     public Pelicula() {}
 
+    // Convert queues to sorted lists (highest to lowest ratings)
+        /*MyHashMap<String, MyList<Pelicula>> top5ByLanguage = new MyHashMap<>(3);
+        MyList<String> languages = queuesByLanguage.keys();
+        for (int i = 0; i < languages.size(); i++) {
+            String language = languages.get(i);
+            MyQueueImpl<Pelicula> queue = queuesByLanguage.get(language);
+            MyLinkedListImpl<Pelicula> sortedMovies = new MyLinkedListImpl<>();
+            //while (!queue.isEmpty()) {
+                 // Add to front for descending order
+            //}
+            top5ByLanguage.put(language, sortedMovies);
+        }*/
+
     public Pelicula(int idPelicula, String titulo, String idiomaOriginal, double revenue,  MyLinkedListImpl<Genero> listaGeneros, Integer idColeccion) {
         this.idPelicula = idPelicula;
         this.titulo = titulo;

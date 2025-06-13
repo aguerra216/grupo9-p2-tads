@@ -3,8 +3,7 @@ package tads.treeBST;
 import tads.LinkedList.*;
 import tads.queue.MyQueue;
 import tads.queue.MyQueueImpl;
-
-public class MyBinarySearchTreeImpl<K extends Comparable<K>, T>
+/*public class MyBinarySearchTreeImpl<K extends Comparable<K>, T>
         implements MyBinarySearchTree<K,T> {
 
 
@@ -267,4 +266,4 @@ public class MyBinarySearchTreeImpl<K extends Comparable<K>, T>
         }
         return treeToReturn;
     }
-}
+}*/

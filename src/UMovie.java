@@ -1,20 +1,15 @@
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.opencsv.exceptions.CsvValidationException;
 import entities.*;
-import org.json.JSONArray;
-import org.json.JSONException;
 import tads.HashT.*;
 import tads.LinkedList.MyLinkedListImpl;
 import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
+import tads.LinkedList.MyList;
+import tads.queue.MyQueueImpl;
+
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.util.Comparator;
+import java.util.Iterator;
 
 
 public class UMovie {
@@ -229,7 +224,6 @@ public class UMovie {
     public void cargarCreditos() {
         try (CSVReader csvReader = new CSVReader(new FileReader("resources/credits.csv"))) {
             csvReader.readNext(); // Saltar el header
-            int count = 0;
             System.out.println("Iniciando carga de créditos");
 
             String[] parts;
@@ -371,6 +365,106 @@ public class UMovie {
         }
     }
 
+    public void top5PeliculasPorIdioma(MyHashMap<Integer, Pelicula> peliculas) {
+        // Comparator for min-heap based on ratings count
+        Comparator<Pelicula> ratingsComparator = (m1, m2) -> {
+            int ratingCompare = Integer.compare(m1.getListaRatings().size(), m2.getListaRatings().size());
+            return ratingCompare != 0 ? ratingCompare : m1.getTitulo().compareTo(m2.getTitulo()); // Tiebreaker by title
+        };
+        // Map to store MyQueueImpl for each language
+        MyHashMap<String, MyQueueImpl<Pelicula>> queuesByLanguage = new MyHashMap<>(5);
+        queuesByLanguage.put("en", new MyQueueImpl<>(ratingsComparator));
+        queuesByLanguage.put("es", new MyQueueImpl<>(ratingsComparator));
+        queuesByLanguage.put("fr", new MyQueueImpl<>(ratingsComparator));
+        queuesByLanguage.put("it", new MyQueueImpl<>(ratingsComparator));
+        queuesByLanguage.put("pt", new MyQueueImpl<>(ratingsComparator));
+
+        // Iterate through the hash values
+        MyList<Pelicula> listaPeliculas = peliculas.values();
+        for (int i = 0; i < listaPeliculas.size(); i++) {
+            Pelicula movie = listaPeliculas.get(i);
+            String language = movie.getIdiomaOriginal();
+            if (queuesByLanguage.contains(language)) {
+                MyQueueImpl<Pelicula> queue = queuesByLanguage.get(language);
+                if (queue.getSize() < 5) {
+                    queue.enqueueWithPriority(movie);
+                } else {
+                    // Peek the head (smallest ratings count)
+                    Iterator<Pelicula> iterator = queue.iterator();
+                    if (iterator.hasNext()) {
+                        Pelicula minMovie = iterator.next();
+                        if (movie.getListaRatings().size() > minMovie.getListaRatings().size()) {
+                            queue.dequeue(); // Remove the movie with fewest ratings
+                            queue.enqueueWithPriority(movie); // Add the new movie
+                        }
+                    }
+                }
+            }
+        }
 
 
+
+        // Display top 5 movies for each language
+        String[] languagesMostrar = {"en", "es", "fr", "it", "pt"};
+        for (String language : languagesMostrar) {
+            System.out.println("Top 5 películas en " + language + ":");
+            MyQueueImpl<Pelicula> queue = queuesByLanguage.get(language);
+            if (queue == null || queue.isEmpty()) {
+                System.out.println("  No hay películas en este idioma.");
+            } else {
+                MyLinkedListImpl<Pelicula> tempMovies = new MyLinkedListImpl<>();
+                while (!queue.isEmpty()) {
+                    tempMovies.add(queue.dequeue()); // Add to end for ascending order
+                }
+                for (int i = 0; i < tempMovies.size(); i++) {
+                    Pelicula movie = tempMovies.get(i);
+                    System.out.printf("  %d. %s (ID: %d, Calificaciones: %d)%n",
+                            i + 1, movie.getTitulo(), movie.getIdPelicula(), movie.getListaRatings().size());
+                }
+            }
+            System.out.println();
+        }
+
+    }
+
+
+    public MyHashMap<Integer, Pelicula> getPeliculas() {
+        return peliculas;
+    }
+
+    public void setPeliculas(MyHashMap<Integer, Pelicula> peliculas) {
+        this.peliculas = peliculas;
+    }
+
+    public MyHashMap<Integer, Usuario> getUsuarios() {
+        return usuarios;
+    }
+
+    public void setUsuarios(MyHashMap<Integer, Usuario> usuarios) {
+        this.usuarios = usuarios;
+    }
+
+    public MyHashMap<Integer, Saga> getSagas() {
+        return sagas;
+    }
+
+    public void setSagas(MyHashMap<Integer, Saga> sagas) {
+        this.sagas = sagas;
+    }
+
+    public MyHashMap<Integer, Actor> getActores() {
+        return actores;
+    }
+
+    public void setActores(MyHashMap<Integer, Actor> actores) {
+        this.actores = actores;
+    }
+
+    public MyHashMap<Integer, Director> getDirectores() {
+        return directores;
+    }
+
+    public void setDirectores(MyHashMap<Integer, Director> directores) {
+        this.directores = directores;
+    }
 }
