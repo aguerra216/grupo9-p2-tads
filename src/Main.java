@@ -33,7 +33,7 @@ public class Main {
                     objUMovie.cargarCreditos();
                     long fin = System.currentTimeMillis();
                     System.out.println("Carga de datos exitosa, tiempo de ejecución de la carga: " + (fin - inicio));
-                    break;
+                     break;
 
                 case 2:
                     ejecutarConsultas(scanner);

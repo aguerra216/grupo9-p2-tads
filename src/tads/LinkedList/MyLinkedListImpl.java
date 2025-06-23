@@ -31,7 +31,7 @@ public class MyLinkedListImpl<T> implements MyList<T>, Iterable<T> {
         addToTheEnd(value);
     }
 
-    private void addToBeginning(T value) {
+    public void addToBeginning(T value) { //lo cambie a public, nose si se puede
         if (value != null) {
             Node<T> elementToAdd = new Node<>(value);
 

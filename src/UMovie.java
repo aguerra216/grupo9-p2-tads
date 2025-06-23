@@ -534,6 +534,190 @@ public class UMovie {
         return revenue;
     }
 
+    public class Top10Directores {
+
+        // Clase interna para almacenar los datos del director
+        private static class DirectorStats {
+            String nombre;
+            int cantidadPeliculas;
+            double medianaCalificacion;
+
+            DirectorStats(String nombre, int cantidadPeliculas, double medianaCalificacion) {
+                this.nombre = nombre;
+                this.cantidadPeliculas = cantidadPeliculas;
+                this.medianaCalificacion = medianaCalificacion;
+            }
+        }
+
+
+        public static MyList<DirectorStats> obtenerTop10Directores(MyHashMap<Integer, Pelicula> peliculas, MyList<Director> directores) {
+            // Comparador para ordenar por medianaCalificacion de menor a mayor
+            Comparator<DirectorStats> comparator = (a, b) -> {
+                if (a.medianaCalificacion < b.medianaCalificacion) return -1;
+                if (a.medianaCalificacion > b.medianaCalificacion) return 1;
+                return 0;
+            };
+
+            // Instanciar MyQueueImpl con el comparador
+            MyQueueImpl<DirectorStats> pq = new MyQueueImpl<>(comparator);
+
+            // Procesar cada director
+            Iterator<Director> dirIterator = directores.iterator();
+            while (dirIterator.hasNext()) {
+                Director director = dirIterator.next();
+                MyLinkedListImpl<Integer> listaPeliculas = director.getListaPeliculas();
+
+                // Verificar que tenga más de 1 película
+                if (listaPeliculas.size() <= 1) {
+                    continue;
+                }
+
+                // Contar evaluaciones y recopilar calificaciones
+                int totalEvaluaciones = 0;
+                MyLinkedListImpl<Double> todasCalificaciones = new MyLinkedListImpl<>();
+                Iterator<Integer> peliIterator = listaPeliculas.iterator();
+                while (peliIterator.hasNext()) {
+                    Integer idPelicula = peliIterator.next();
+                    Pelicula pelicula = peliculas.get(idPelicula);
+                    if (pelicula != null) {
+                        MyLinkedListImpl<Calificacion> ratings = pelicula.getListaRatings();
+                        totalEvaluaciones += ratings.size();
+                        Iterator<Calificacion> ratingIterator = ratings.iterator();
+                        while (ratingIterator.hasNext()) {
+                            Calificacion calificacion = ratingIterator.next();
+                            todasCalificaciones.add(calificacion.getRating());
+                        }
+                    }
+                }
+
+                // Verificar que tenga más de 100 evaluaciones
+                if (totalEvaluaciones <= 100) {
+                    continue;
+                }
+
+                // Calcular la mediana
+                double mediana = calcularMediana(todasCalificaciones);
+
+                // Agregar a la MyQueueImpl
+                pq.enqueueWithPriority(new DirectorStats(director.getNombre(), listaPeliculas.size(), mediana));
+                if (pq.getSize() > 10) {
+                    pq.dequeue(); // Eliminar el director con menor mediana
+                }
+            }
+
+            // Convertir MyQueueImpl a lista ordenada (de mayor a menor)
+            MyLinkedListImpl<DirectorStats> resultado = new MyLinkedListImpl<>();
+            MyLinkedListImpl<DirectorStats> temp = new MyLinkedListImpl<>();
+            while (!pq.isEmpty()) {
+                temp.add(pq.dequeue()); // Agregar al final (menor a mayor)
+            }
+
+            // Invertir el orden usando addToBeginning
+            Iterator<DirectorStats> iterator = temp.iterator();
+            while (iterator.hasNext()) {
+                resultado.addToBeginning(iterator.next()); // Agregar al inicio para invertir
+            }
+
+            return resultado;
+        }
+
+        // Función auxiliar para calcular la mediana
+        private static double calcularMediana(MyLinkedListImpl<Double> calificaciones) {
+            if (calificaciones.isEmpty()) {
+                return 0.0;
+            }
+
+            // Ordenar la lista usando Merge Sort
+            MyLinkedListImpl<Double> sortedCalificaciones = mergeSort(calificaciones);
+
+            // Encontrar la mediana
+            int size = sortedCalificaciones.size();
+            int mid = size / 2;
+            Iterator<Double> iterator = sortedCalificaciones.iterator();
+            double left = 0.0, right = 0.0;
+            for (int i = 0; i <= mid && iterator.hasNext(); i++) {
+                double value = iterator.next();
+                if (i == mid - 1 && size % 2 == 0) {
+                    left = value;
+                }
+                if (i == mid) {
+                    right = value;
+                }
+            }
+
+            if (size % 2 == 0) {
+                return (left + right) / 2.0; // Promedio de los dos valores centrales
+            } else {
+                return right; // Valor central
+            }
+        }
+
+        // Implementación de Merge Sort para MyLinkedListImpl
+        private static MyLinkedListImpl<Double> mergeSort(MyLinkedListImpl<Double> list) {
+            if (list.size() <= 1) {
+                return list;
+            }
+
+            // Dividir la lista en dos mitades
+            int mid = list.size() / 2;
+            MyLinkedListImpl<Double> left = new MyLinkedListImpl<>();
+            MyLinkedListImpl<Double> right = new MyLinkedListImpl<>();
+            Iterator<Double> iterator = list.iterator();
+            for (int i = 0; iterator.hasNext(); i++) {
+                Double value = iterator.next();
+                if (i < mid) {
+                    left.add(value);
+                } else {
+                    right.add(value);
+                }
+            }
+
+            // Ordenar recursivamente las mitades
+            left = mergeSort(left);
+            right = mergeSort(right);
+
+            // Combinar las mitades ordenadas
+            return merge(left, right);
+        }
+
+        // Combinar dos listas ordenadas
+        private static MyLinkedListImpl<Double> merge(MyLinkedListImpl<Double> left, MyLinkedListImpl<Double> right) {
+            MyLinkedListImpl<Double> result = new MyLinkedListImpl<>();
+            Iterator<Double> leftIterator = left.iterator();
+            Iterator<Double> rightIterator = right.iterator();
+            Double leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
+            Double rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
+
+            while (leftValue != null && rightValue != null) {
+                if (leftValue <= rightValue) {
+                    result.add(leftValue);
+                    leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
+                } else {
+                    result.add(rightValue);
+                    rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
+                }
+            }
+
+            // Agregar los elementos restantes de left
+            if (leftValue != null) {
+                result.add(leftValue);
+                while (leftIterator.hasNext()) {
+                    result.add(leftIterator.next());
+                }
+            }
+
+            // Agregar los elementos restantes de right
+            if (rightValue != null) {
+                result.add(rightValue);
+                while (rightIterator.hasNext()) {
+                    result.add(rightIterator.next());
+                }
+            }
+
+            return result;
+        }
+    }
+
     public MyHashMap<Integer, Pelicula> getPeliculas() {
         return peliculas;
     }

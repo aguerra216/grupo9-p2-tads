@@ -1,5 +1,7 @@
 package tads.LinkedList;
 
+import java.util.Iterator;
+
 public interface MyList<T> {
     void add(T value);
 
@@ -15,4 +17,5 @@ public interface MyList<T> {
 
     boolean isEmpty();
 
+    Iterator<T> iterator(); //ver si se puede
 }
