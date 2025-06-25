@@ -8,7 +8,8 @@ public class Pelicula {
     private double revenue;
     private MyLinkedListImpl<Genero> listaGeneros;
     private Integer idColeccion;
-    private MyLinkedListImpl<Calificacion> listaRatings = new MyLinkedListImpl<>();
+    private MyLinkedListImpl<Calificacion> listaRatings;
+    private MyLinkedListImpl<Integer> listaActores;
 
     public Pelicula() {}
 
@@ -20,7 +21,20 @@ public class Pelicula {
         this.revenue = revenue;
         this.listaGeneros = listaGeneros;
         this.idColeccion = idColeccion;
+        this.listaRatings = new MyLinkedListImpl<>();
+        this.listaActores = new MyLinkedListImpl<>();
 
+    }
+    public void agregarActor(int idActor) {
+        listaActores.add(idActor);
+    }
+
+    public MyLinkedListImpl<Integer> getListaActors() {
+        return listaActores;
+    }
+
+    public void setListaActors(MyLinkedListImpl<Integer> listaActors) {
+        this.listaActores = listaActors;
     }
 
     public void agregarRating(Calificacion c) {

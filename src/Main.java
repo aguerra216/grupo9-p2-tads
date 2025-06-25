@@ -70,7 +70,6 @@ public class Main {
 
             switch (opcionConsulta) {
                 case 1:
-                    // TODO: Implementar lógica real
                     System.out.println("Mostrando Top 5 de las películas que más calificaciones por idioma...");
                     long inicio = System.currentTimeMillis();
                     objUMovie.top5PeliculasPorIdioma(objUMovie.getPeliculas());
@@ -93,12 +92,24 @@ public class Main {
                     break;
                 case 4:
                     System.out.println("Mostrando Top 10 de directores con mejor calificación...");
+                    long inicio4 = System.currentTimeMillis();
+                    objUMovie.top10DirectoresMejorCalificacion(objUMovie.getDirectores());
+                    long fin4 = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin4-inicio4) + " ms");
                     break;
                 case 5:
                     System.out.println("Mostrando actor con más calificaciones por mes...");
+                    long inicio5 = System.currentTimeMillis();
+                    objUMovie.actorMasCalificacionPorMes();
+                    long fin5 = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin5-inicio5) + " ms");
                     break;
                 case 6:
                     System.out.println("Mostrando usuarios con más calificaciones por género...");
+                    long inicio6 = System.currentTimeMillis();
+
+                    long fin6 = System.currentTimeMillis();
+                    System.out.println("Tiempo de ejecucción de la consulta: " + (fin6-inicio6) + " ms");
                     break;
                 case 7:
                     volver = true;

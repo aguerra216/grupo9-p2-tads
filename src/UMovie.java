@@ -8,6 +8,10 @@ import tads.queue.MyQueueImpl;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -251,6 +255,11 @@ public class UMovie {
             System.out.println(usuarios.size() + " usuarios");
             System.out.println(actores.size() + " actores");
             System.out.println(directores.size() + " directores");
+            int ratings = 0;
+            for(Usuario user: usuarios.values()) {
+                ratings = ratings + user.getCalificaciones().size();
+            }
+            System.out.println("Ratings" + ratings);
 
         } catch (IOException | CsvValidationException e) {
             System.out.println("Error cargando credits.csv: " + e.getMessage());
@@ -297,11 +306,14 @@ public class UMovie {
                 }
 
                 if (id != -1 && name != null) {
-                    Actor actor = new Actor(id, name);
-                    actor.agregarPelicula(idMovie);
                     if (!actores.contains(id)) {
+                        Actor actor = new Actor(id, name);
+                        actor.agregarPelicula(idMovie);
                         actores.put(id, actor);
+                    } else {
+                        actores.get(id).agregarPelicula(idMovie);
                     }
+                    peliculas.get(idMovie).agregarActor(id);
 
                 }
             } catch (Exception ignored) {
@@ -350,10 +362,12 @@ public class UMovie {
                 }
 
                 if (isDirector && id != -1 && name != null) {
-                    Director director = new Director(id, name);
-                    director.agregarPelicula(idMovie);
                     if (!directores.contains(id)) {
+                        Director director = new Director(id, name);
+                        director.agregarPelicula(idMovie);
                         directores.put(id, director);
+                    } else {
+                        directores.get(id).agregarPelicula(idMovie);
                     }
                     return;
 
@@ -534,189 +548,264 @@ public class UMovie {
         return revenue;
     }
 
-    public class Top10Directores {
+    public void top10DirectoresMejorCalificacion(MyHashMap<Integer, Director> directores) {
+        class DirectorConMediana{
+            Director director;
+            double mediana;
 
-        // Clase interna para almacenar los datos del director
-        private static class DirectorStats {
-            String nombre;
-            int cantidadPeliculas;
-            double medianaCalificacion;
-
-            DirectorStats(String nombre, int cantidadPeliculas, double medianaCalificacion) {
-                this.nombre = nombre;
-                this.cantidadPeliculas = cantidadPeliculas;
-                this.medianaCalificacion = medianaCalificacion;
+            public DirectorConMediana(Director director, double mediana) {
+                this.director = director;
+                this.mediana = mediana;
             }
         }
+        Comparator<DirectorConMediana> medianaComparator = (a, b) -> {
+            int comparacionMediana = Double.compare(a.mediana, b.mediana);
+            if (comparacionMediana != 0) {
+                return comparacionMediana;
+            }
+            // En caso de empate, comparar por cantidad de peliculas (menor es prioritario)
+            return Integer.compare(
+                    a.director.getListaPeliculas().size(),
+                    b.director.getListaPeliculas().size()
+            );
+        };
+
+        MyQueueImpl<DirectorConMediana> top10Queue = new MyQueueImpl<>(medianaComparator);
 
 
-        public static MyList<DirectorStats> obtenerTop10Directores(MyHashMap<Integer, Pelicula> peliculas, MyList<Director> directores) {
-            // Comparador para ordenar por medianaCalificacion de menor a mayor
-            Comparator<DirectorStats> comparator = (a, b) -> {
-                if (a.medianaCalificacion < b.medianaCalificacion) return -1;
-                if (a.medianaCalificacion > b.medianaCalificacion) return 1;
-                return 0;
-            };
-
-            // Instanciar MyQueueImpl con el comparador
-            MyQueueImpl<DirectorStats> pq = new MyQueueImpl<>(comparator);
-
-            // Procesar cada director
-            Iterator<Director> dirIterator = directores.iterator();
-            while (dirIterator.hasNext()) {
-                Director director = dirIterator.next();
-                MyLinkedListImpl<Integer> listaPeliculas = director.getListaPeliculas();
-
-                // Verificar que tenga más de 1 película
-                if (listaPeliculas.size() <= 1) {
-                    continue;
-                }
-
-                // Contar evaluaciones y recopilar calificaciones
-                int totalEvaluaciones = 0;
-                MyLinkedListImpl<Double> todasCalificaciones = new MyLinkedListImpl<>();
-                Iterator<Integer> peliIterator = listaPeliculas.iterator();
-                while (peliIterator.hasNext()) {
-                    Integer idPelicula = peliIterator.next();
-                    Pelicula pelicula = peliculas.get(idPelicula);
-                    if (pelicula != null) {
-                        MyLinkedListImpl<Calificacion> ratings = pelicula.getListaRatings();
-                        totalEvaluaciones += ratings.size();
-                        Iterator<Calificacion> ratingIterator = ratings.iterator();
-                        while (ratingIterator.hasNext()) {
-                            Calificacion calificacion = ratingIterator.next();
-                            todasCalificaciones.add(calificacion.getRating());
-                        }
-                    }
-                }
-
-                // Verificar que tenga más de 100 evaluaciones
-                if (totalEvaluaciones <= 100) {
-                    continue;
-                }
-
-                // Calcular la mediana
-                double mediana = calcularMediana(todasCalificaciones);
-
-                // Agregar a la MyQueueImpl
-                pq.enqueueWithPriority(new DirectorStats(director.getNombre(), listaPeliculas.size(), mediana));
-                if (pq.getSize() > 10) {
-                    pq.dequeue(); // Eliminar el director con menor mediana
+        for(Director director : directores.values()) {
+            if (director.getListaPeliculas().size() <= 1) {
+                continue;
+            }
+            MyLinkedListImpl<Double> listaCalificaciones = new MyLinkedListImpl<>();
+            for (Integer idPelicula : director.getListaPeliculas()) {
+                Pelicula pelicula = peliculas.get(idPelicula);
+                for (Calificacion calificacion : pelicula.getListaRatings()) {
+                    listaCalificaciones.add(calificacion.getRating());
                 }
             }
-
-            // Convertir MyQueueImpl a lista ordenada (de mayor a menor)
-            MyLinkedListImpl<DirectorStats> resultado = new MyLinkedListImpl<>();
-            MyLinkedListImpl<DirectorStats> temp = new MyLinkedListImpl<>();
-            while (!pq.isEmpty()) {
-                temp.add(pq.dequeue()); // Agregar al final (menor a mayor)
+            if (listaCalificaciones.size() < 100) {
+                continue;
             }
-
-            // Invertir el orden usando addToBeginning
-            Iterator<DirectorStats> iterator = temp.iterator();
-            while (iterator.hasNext()) {
-                resultado.addToBeginning(iterator.next()); // Agregar al inicio para invertir
-            }
-
-            return resultado;
-        }
-
-        // Función auxiliar para calcular la mediana
-        private static double calcularMediana(MyLinkedListImpl<Double> calificaciones) {
-            if (calificaciones.isEmpty()) {
-                return 0.0;
-            }
-
-            // Ordenar la lista usando Merge Sort
-            MyLinkedListImpl<Double> sortedCalificaciones = mergeSort(calificaciones);
-
-            // Encontrar la mediana
-            int size = sortedCalificaciones.size();
-            int mid = size / 2;
-            Iterator<Double> iterator = sortedCalificaciones.iterator();
-            double left = 0.0, right = 0.0;
-            for (int i = 0; i <= mid && iterator.hasNext(); i++) {
-                double value = iterator.next();
-                if (i == mid - 1 && size % 2 == 0) {
-                    left = value;
-                }
-                if (i == mid) {
-                    right = value;
-                }
-            }
-
-            if (size % 2 == 0) {
-                return (left + right) / 2.0; // Promedio de los dos valores centrales
+            double mediana = calcularMediana(listaCalificaciones);
+            DirectorConMediana dir = new DirectorConMediana(director, mediana);
+            if (top10Queue.getSize() < 10) {
+                top10Queue.enqueueWithPriority(dir);
             } else {
-                return right; // Valor central
+                DirectorConMediana minDirector = top10Queue.peek();
+                if (mediana > minDirector.mediana) {
+                    top10Queue.dequeue();
+                    top10Queue.enqueueWithPriority(dir);
+                }
+            }
+
+        }
+
+        System.out.println("Top 10 actores con mejor calificación: ");
+        if (top10Queue.isEmpty()) {
+            System.out.println("  No hay directores para mostrar");
+        } else {
+            int indice = 10;
+            while(!top10Queue.isEmpty()) {
+                DirectorConMediana dir = top10Queue.dequeue();
+                System.out.printf("  %s. %s, %d, %s%n",
+                        indice, dir.director.getNombre(), dir.director.getListaPeliculas().size(), dir.mediana);
+                indice--;
+            }
+        }
+        System.out.println();
+
+    }
+
+    // Función auxiliar para calcular la mediana
+    private static double calcularMediana(MyLinkedListImpl<Double> calificaciones) {
+        // Ordenar la lista usando Merge Sort
+        MyLinkedListImpl<Double> sortedCalificaciones = mergeSort(calificaciones);
+
+        // Encontrar la mediana
+        int size = sortedCalificaciones.size();
+        int mid = size / 2;
+        Iterator<Double> iterator = sortedCalificaciones.iterator();
+        double left = 0.0, right = 0.0;
+        for (int i = 0; i <= mid && iterator.hasNext(); i++) {
+            double value = iterator.next();
+            if (i == mid - 1 && size % 2 == 0) {
+                left = value;
+            }
+            if (i == mid) {
+                right = value;
             }
         }
 
-        // Implementación de Merge Sort para MyLinkedListImpl
-        private static MyLinkedListImpl<Double> mergeSort(MyLinkedListImpl<Double> list) {
-            if (list.size() <= 1) {
-                return list;
-            }
-
-            // Dividir la lista en dos mitades
-            int mid = list.size() / 2;
-            MyLinkedListImpl<Double> left = new MyLinkedListImpl<>();
-            MyLinkedListImpl<Double> right = new MyLinkedListImpl<>();
-            Iterator<Double> iterator = list.iterator();
-            for (int i = 0; iterator.hasNext(); i++) {
-                Double value = iterator.next();
-                if (i < mid) {
-                    left.add(value);
-                } else {
-                    right.add(value);
-                }
-            }
-
-            // Ordenar recursivamente las mitades
-            left = mergeSort(left);
-            right = mergeSort(right);
-
-            // Combinar las mitades ordenadas
-            return merge(left, right);
-        }
-
-        // Combinar dos listas ordenadas
-        private static MyLinkedListImpl<Double> merge(MyLinkedListImpl<Double> left, MyLinkedListImpl<Double> right) {
-            MyLinkedListImpl<Double> result = new MyLinkedListImpl<>();
-            Iterator<Double> leftIterator = left.iterator();
-            Iterator<Double> rightIterator = right.iterator();
-            Double leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
-            Double rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
-
-            while (leftValue != null && rightValue != null) {
-                if (leftValue <= rightValue) {
-                    result.add(leftValue);
-                    leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
-                } else {
-                    result.add(rightValue);
-                    rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
-                }
-            }
-
-            // Agregar los elementos restantes de left
-            if (leftValue != null) {
-                result.add(leftValue);
-                while (leftIterator.hasNext()) {
-                    result.add(leftIterator.next());
-                }
-            }
-
-            // Agregar los elementos restantes de right
-            if (rightValue != null) {
-                result.add(rightValue);
-                while (rightIterator.hasNext()) {
-                    result.add(rightIterator.next());
-                }
-            }
-
-            return result;
+        if (size % 2 == 0) {
+            return (left + right) / 2.0; // Promedio de los dos valores centrales
+        } else {
+            return right; // Valor central
         }
     }
+
+    // Implementación de Merge Sort para MyLinkedListImpl
+    private static MyLinkedListImpl<Double> mergeSort(MyLinkedListImpl<Double> list) {
+        if (list.size() <= 1) {
+            return list;
+        }
+
+        // Dividir la lista en dos mitades
+        int mid = list.size() / 2;
+        MyLinkedListImpl<Double> left = new MyLinkedListImpl<>();
+        MyLinkedListImpl<Double> right = new MyLinkedListImpl<>();
+        Iterator<Double> iterator = list.iterator();
+        for (int i = 0; iterator.hasNext(); i++) {
+            Double value = iterator.next();
+            if (i < mid) {
+                left.add(value);
+            } else {
+                right.add(value);
+            }
+        }
+
+        // Ordenar recursivamente las mitades
+        left = mergeSort(left);
+        right = mergeSort(right);
+
+        // Combinar las mitades ordenadas
+        return merge(left, right);
+    }
+
+    // Combinar dos listas ordenadas
+    private static MyLinkedListImpl<Double> merge(MyLinkedListImpl<Double> left, MyLinkedListImpl<Double> right) {
+        MyLinkedListImpl<Double> result = new MyLinkedListImpl<>();
+        Iterator<Double> leftIterator = left.iterator();
+        Iterator<Double> rightIterator = right.iterator();
+        Double leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
+        Double rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
+
+        while (leftValue != null && rightValue != null) {
+            if (leftValue <= rightValue) {
+                result.add(leftValue);
+                leftValue = leftIterator.hasNext() ? leftIterator.next() : null;
+            } else {
+                result.add(rightValue);
+                rightValue = rightIterator.hasNext() ? rightIterator.next() : null;
+            }
+        }
+
+        // Agregar los elementos restantes de left
+        if (leftValue != null) {
+            result.add(leftValue);
+            while (leftIterator.hasNext()) {
+                result.add(leftIterator.next());
+            }
+        }
+
+        // Agregar los elementos restantes de right
+        if (rightValue != null) {
+            result.add(rightValue);
+            while (rightIterator.hasNext()) {
+                result.add(rightIterator.next());
+            }
+        }
+
+        return result;
+    }
+
+    public void actorMasCalificacionPorMes () {
+
+        class EstadisticasActor {
+            String nombre;
+            int cantidadPeliculas;
+            int cantidadCalificaciones;
+
+            EstadisticasActor(String nombre) {
+                this.nombre = nombre;
+                this.cantidadPeliculas = 0;
+                this.cantidadCalificaciones = 0;
+            }
+        }
+
+        // Mapa: mes -> (idActor -> estadísticas)
+        MyHashMap<String, MyHashMap<Integer, EstadisticasActor>> estadisticasPorMes = new MyHashMap<>(12);
+        MyHashMap<String, MyHashMap<Integer, Integer>> peliculasVistasPorMes = new MyHashMap<>(12);
+        // Inicializar los 12 meses
+        for (int mes = 1; mes <= 12; mes++) {
+            String mesString = String.format("%02d", mes); // Usar formato consistente
+            estadisticasPorMes.put(mesString, new MyHashMap<>(300000));
+            peliculasVistasPorMes.put(mesString, new MyHashMap<>(300000));
+        }
+        for (Pelicula pelicula : peliculas.values()) {
+            MyLinkedListImpl<Integer> actoresPelicula = pelicula.getListaActors();
+            for (Calificacion calificacion : pelicula.getListaRatings()) {
+                long timestamp = calificacion.getTimestamp(); // En segundos
+                Instant instant = Instant.ofEpochSecond(timestamp);
+                ZonedDateTime fecha = instant.atZone(ZoneId.systemDefault());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM"); // Solo mes numérico (01-12)
+                String mes = fecha.format(formatter);
+
+                MyHashMap<Integer, EstadisticasActor> actoresMes = estadisticasPorMes.get(mes);
+                for (Integer idActor : actoresPelicula) {
+                    Actor actor = actores.get(idActor);
+                    if (!actoresMes.contains(idActor)) {
+                        EstadisticasActor estadisticasActor = new EstadisticasActor(actor.getNombre());
+                        actoresMes.put(idActor, estadisticasActor);
+                    }
+                    EstadisticasActor objEstadisticasActor = actoresMes.get(idActor);
+                    objEstadisticasActor.cantidadCalificaciones++;
+                    if (!peliculasVistasPorMes.get(mes).contains(pelicula.getIdPelicula())) {
+                        peliculasVistasPorMes.get(mes).put(pelicula.getIdPelicula(),pelicula.getIdPelicula());
+                        objEstadisticasActor.cantidadPeliculas++;
+                    }
+                }
+            }
+        }
+
+        // Imprimir resultados por mes
+        for (int mes = 1; mes <= 12; mes++) {
+            String mesString = String.format("%02d", mes); // <-- esto está bien
+            MyHashMap<Integer, EstadisticasActor> actoresMes = estadisticasPorMes.get(mesString);
+            EstadisticasActor actorMasCalificado = null;
+            int maxCalificaciones = -1;
+
+            // Encontrar actor con más calificaciones
+            for (EstadisticasActor stats : actoresMes.values()) {
+                if (stats.cantidadCalificaciones > maxCalificaciones) {
+                    maxCalificaciones = stats.cantidadCalificaciones;
+                    actorMasCalificado = stats;
+                }
+            }
+
+            // Imprimir resultado
+            if (actorMasCalificado != null) {
+                System.out.printf("Mes: %d, Actor: %s, Películas: %d, Calificaciones: %d%n",
+                        mes,
+                        actorMasCalificado.nombre,
+                        actorMasCalificado.cantidadPeliculas,
+                        actorMasCalificado.cantidadCalificaciones);
+            } else {
+                System.out.printf("Mes: %d, Sin datos%n", mes);
+            }
+        }
+
+    }
+    private boolean peliculaYaContada(Actor actor, int idPelicula, String mes, MyHashMap<String, MyHashMap<Integer, MyHashMap<Integer,Integer>>> peliculasContadas) {
+        MyHashMap<Integer, MyHashMap<Integer, Integer>> actorPeliculas = peliculasContadas.get(mes);
+        if (actorPeliculas == null) {
+            actorPeliculas = new MyHashMap<>(30000);
+            peliculasContadas.put(mes, actorPeliculas);
+        }
+        MyHashMap<Integer,Integer> peliculas = actorPeliculas.get(actor.getId());
+        if (peliculas == null) {
+            peliculas = new MyHashMap<>(100000);
+            actorPeliculas.put(actor.getId(), peliculas);
+        }
+        if (peliculas.contains(idPelicula)) {
+            return true;
+        }
+        peliculas.put(idPelicula,idPelicula);
+        return false;
+    }
+
+
+
 
     public MyHashMap<Integer, Pelicula> getPeliculas() {
         return peliculas;
