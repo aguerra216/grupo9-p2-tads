@@ -107,7 +107,7 @@ public class Main {
                 case 6:
                     System.out.println("Mostrando usuarios con más calificaciones por género...");
                     long inicio6 = System.currentTimeMillis();
-
+                    objUMovie.usuariosMasCalificacionesPorGenero();
                     long fin6 = System.currentTimeMillis();
                     System.out.println("Tiempo de ejecucción de la consulta: " + (fin6-inicio6) + " ms");
                     break;

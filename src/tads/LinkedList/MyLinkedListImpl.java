@@ -60,6 +60,26 @@ public class MyLinkedListImpl<T> implements MyList<T>, Iterable<T> {
             this.size++; // Incrementar tamaño
         }
     }
+    public void set(int position, T value) {
+        if (position < 0 || position >= size) {
+            throw new IndexOutOfBoundsException("Invalid position: " + position);
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("Value cannot be null");
+        }
+
+        Node<T> current = first;
+        int currentPosition = 0;
+
+        while (current != null && currentPosition < position) {
+            current = current.getNext();
+            currentPosition++;
+        }
+
+        if (current != null) {
+            current.setValue(value);
+        }
+    }
 
     public T get(int position) {
         T valueToReturn = null;

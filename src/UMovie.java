@@ -804,8 +804,95 @@ public class UMovie {
         return false;
     }
 
+    public void usuariosMasCalificacionesPorGenero () {
 
+        class EstadisticasGenero {
+            String genero;
+            int contadorRatings;
 
+            public EstadisticasGenero(String genero, int contadorRatings) {
+                this.genero = genero;
+                this.contadorRatings = contadorRatings;
+            }
+
+        }
+
+        class EstadisticasUsuario {
+            Integer usuarioId;
+            int contadorRatings;
+
+            public EstadisticasUsuario(Integer usuario, int contadorRatings) {
+                this.usuarioId = usuario;
+                this.contadorRatings = contadorRatings;
+            }
+        }
+
+        MyHashMap<String, Integer> generosRatingContador = new MyHashMap<>(25);
+        MyHashMap<String, MyHashMap<Integer, Integer>> usuariosGenerosContador = new MyHashMap<>(25);
+
+        for (Usuario usuario : usuarios.values()){
+            for (Calificacion c: usuario.getCalificaciones()){
+                Pelicula pelicula = peliculas.get(c.getMovieId());
+                for (Genero genero: pelicula.getListaGeneros()){
+                    if (!generosRatingContador.contains(genero.name())){
+                        generosRatingContador.put(genero.name(), 1);
+                    } else {
+                        generosRatingContador.put(genero.name(), generosRatingContador.get(genero.name()) + 1);
+                    }
+                    if (!usuariosGenerosContador.contains(genero.name())){
+                        usuariosGenerosContador.put(genero.name(), new MyHashMap<>(200000));
+                    }
+                    if (!usuariosGenerosContador.get(genero.name()).contains(usuario.getId())){
+                        usuariosGenerosContador.get(genero.name()).put(usuario.getId(),1);
+                    } else {
+                        usuariosGenerosContador.get(genero.name()).put(usuario.getId(),usuariosGenerosContador.get(genero.name()).get(usuario.getId()) + 1);
+                    }
+                }
+            }
+        }
+
+        MyLinkedListImpl<EstadisticasGenero> listaGen = new MyLinkedListImpl<>();
+        for (String genero : generosRatingContador.keys()) {
+            listaGen.add(new EstadisticasGenero(genero, generosRatingContador.get(genero)));
+        }
+
+        //bubble sort para ordenar
+        for (int i = 0; i < listaGen.size() - 1; i++) {
+            for (int j = i + 1; j < listaGen.size(); j++) {
+                EstadisticasGenero gi = listaGen.get(i);
+                EstadisticasGenero gj = listaGen.get(j);
+                if (gi.contadorRatings < gj.contadorRatings) {
+                    listaGen.set(i, gj);
+                    listaGen.set(j, gi);
+                }
+            }
+        }
+
+        // tomo solo 10 del top
+        int topGenerosLimite = 10;
+        MyLinkedListImpl<EstadisticasGenero> topGeneros = new MyLinkedListImpl<>();
+        for (int i = 0; i < topGenerosLimite; i++) {
+            topGeneros.add(listaGen.get(i));
+        }
+
+        // por cada genero, encontrar el usuario con mas cal
+        for (EstadisticasGenero genreStats : topGeneros) {
+            MyHashMap<Integer, Integer> contadorUsuario = usuariosGenerosContador.get(genreStats.genero);
+            EstadisticasUsuario topUsuario = null;
+            for (Integer userId : contadorUsuario.keys()) {
+                int count = contadorUsuario.get(userId);
+                if (topUsuario == null || count > topUsuario.contadorRatings) {
+                    topUsuario = new EstadisticasUsuario(userId, count);
+                }
+            }
+
+            // Mostrar resultado
+            if (topUsuario != null) {
+                System.out.printf("%d, %s, %d\n", topUsuario.usuarioId, genreStats.genero, topUsuario.contadorRatings);
+            }
+        }
+
+    }
 
     public MyHashMap<Integer, Pelicula> getPeliculas() {
         return peliculas;
