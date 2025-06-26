@@ -1,5 +1,4 @@
 package tads.LinkedList;
-
 import exceptions.EmptyQueueException;
 import exceptions.EmptyStackException;
 

@@ -3,7 +3,6 @@ import entities.*;
 import tads.HashT.*;
 import tads.LinkedList.MyLinkedListImpl;
 import com.opencsv.CSVReader;
-import tads.LinkedList.MyList;
 import tads.queue.MyQueueImpl;
 
 import java.io.FileReader;
@@ -26,10 +25,10 @@ public class UMovie {
 
     public UMovie() {
         peliculas = new MyHashMap<>(50000);
-        usuarios = new MyHashMap<>(1000000);
+        usuarios = new MyHashMap<>(500000);
         sagas = new MyHashMap<>(50000);
-        actores = new MyHashMap<>(1000000);
-        directores = new MyHashMap<>(50000);
+        actores = new MyHashMap<>(500000);
+        directores = new MyHashMap<>(40000);
 
     }
 
@@ -376,7 +375,7 @@ public class UMovie {
         }
     }
 
-    public void top5PeliculasPorIdioma(MyHashMap<Integer, Pelicula> peliculas) {
+    public void top5PeliculasPorIdioma() {
         // Comparator for min-heap based on ratings count
         Comparator<Pelicula> ratingsComparator = (m1, m2) -> {
             int ratingCompare = Integer.compare(m1.getListaRatings().size(), m2.getListaRatings().size());
@@ -434,7 +433,7 @@ public class UMovie {
     }
 
 
-    public void top10PeliculasCalificacionMedia(MyHashMap<Integer, Pelicula> peliculas) {
+    public void top10PeliculasCalificacionMedia() {
         // Clase interna para almacenar película y su calificación media temporalmente
         class PeliculaConMedia {
             Pelicula pelicula;
@@ -501,7 +500,7 @@ public class UMovie {
         return calificacionMedia / pelicula.getListaRatings().size();
     }
 
-    public void top5ColeccionesIngresos(MyHashMap<Integer, Saga> sagas) {
+    public void top5ColeccionesIngresos() {
         // Comparator para el min-heap basado en revenue
         Comparator<Saga> revenueComparator = (s1, s2) -> {
             int revenueCompare = Double.compare(obtenerRevenue(s1.getId()), obtenerRevenue(s2.getId()));
@@ -548,7 +547,7 @@ public class UMovie {
         return revenue;
     }
 
-    public void top10DirectoresMejorCalificacion(MyHashMap<Integer, Director> directores) {
+    public void top10DirectoresMejorCalificacion() {
         class DirectorConMediana{
             Director director;
             double mediana;
@@ -723,22 +722,22 @@ public class UMovie {
             }
         }
 
-        // Mapa: mes -> (idActor -> estadísticas)
+        //mes - (idActor - estadísticas)
         MyHashMap<String, MyHashMap<Integer, EstadisticasActor>> estadisticasPorMes = new MyHashMap<>(12);
         MyHashMap<String, MyHashMap<Integer, Integer>> peliculasVistasPorMes = new MyHashMap<>(12);
-        // Inicializar los 12 meses
+        //los 12 meses
         for (int mes = 1; mes <= 12; mes++) {
-            String mesString = String.format("%02d", mes); // Usar formato consistente
+            String mesString = String.format("%02d", mes);
             estadisticasPorMes.put(mesString, new MyHashMap<>(300000));
             peliculasVistasPorMes.put(mesString, new MyHashMap<>(300000));
         }
         for (Pelicula pelicula : peliculas.values()) {
             MyLinkedListImpl<Integer> actoresPelicula = pelicula.getListaActors();
             for (Calificacion calificacion : pelicula.getListaRatings()) {
-                long timestamp = calificacion.getTimestamp(); // En segundos
+                long timestamp = calificacion.getTimestamp(); // segundos
                 Instant instant = Instant.ofEpochSecond(timestamp);
                 ZonedDateTime fecha = instant.atZone(ZoneId.systemDefault());
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM"); // Solo mes numérico (01-12)
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM"); //solo mes
                 String mes = fecha.format(formatter);
 
                 MyHashMap<Integer, EstadisticasActor> actoresMes = estadisticasPorMes.get(mes);
@@ -758,7 +757,7 @@ public class UMovie {
             }
         }
 
-        // Imprimir resultados por mes
+        //imprimir por mes
         for (int mes = 1; mes <= 12; mes++) {
             String mesString = String.format("%02d", mes); // <-- esto está bien
             MyHashMap<Integer, EstadisticasActor> actoresMes = estadisticasPorMes.get(mesString);
@@ -786,23 +785,7 @@ public class UMovie {
         }
 
     }
-    private boolean peliculaYaContada(Actor actor, int idPelicula, String mes, MyHashMap<String, MyHashMap<Integer, MyHashMap<Integer,Integer>>> peliculasContadas) {
-        MyHashMap<Integer, MyHashMap<Integer, Integer>> actorPeliculas = peliculasContadas.get(mes);
-        if (actorPeliculas == null) {
-            actorPeliculas = new MyHashMap<>(30000);
-            peliculasContadas.put(mes, actorPeliculas);
-        }
-        MyHashMap<Integer,Integer> peliculas = actorPeliculas.get(actor.getId());
-        if (peliculas == null) {
-            peliculas = new MyHashMap<>(100000);
-            actorPeliculas.put(actor.getId(), peliculas);
-        }
-        if (peliculas.contains(idPelicula)) {
-            return true;
-        }
-        peliculas.put(idPelicula,idPelicula);
-        return false;
-    }
+
 
     public void usuariosMasCalificacionesPorGenero () {
 

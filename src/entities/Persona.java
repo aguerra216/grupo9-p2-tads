@@ -1,5 +1,4 @@
 package entities;
-
 import tads.LinkedList.MyLinkedListImpl;
 
 public class Persona {

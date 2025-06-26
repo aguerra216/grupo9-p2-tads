@@ -1,11 +1,3 @@
-
-import entities.Genero;
-import entities.Pelicula;
-import tads.LinkedList.MyLinkedListImpl;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -72,28 +64,28 @@ public class Main {
                 case 1:
                     System.out.println("Mostrando Top 5 de las películas que más calificaciones por idioma...");
                     long inicio = System.currentTimeMillis();
-                    objUMovie.top5PeliculasPorIdioma(objUMovie.getPeliculas());
+                    objUMovie.top5PeliculasPorIdioma();
                     long fin = System.currentTimeMillis();
                     System.out.println("Tiempo de ejecucción de la consulta: " + (fin-inicio) + " ms");
                     break;
                 case 2:
                     System.out.println("Mostrando Top 10 de películas con mejor calificación media...");
                     long inicio2 = System.currentTimeMillis();
-                    objUMovie.top10PeliculasCalificacionMedia(objUMovie.getPeliculas());
+                    objUMovie.top10PeliculasCalificacionMedia();
                     long fin2 = System.currentTimeMillis();
                     System.out.println("Tiempo de ejecucción de la consulta: " + (fin2-inicio2) + " ms");
                     break;
                 case 3:
                     System.out.println("Mostrando Top 5 de colecciones con más ingresos...");
                     long inicio3 = System.currentTimeMillis();
-                    objUMovie.top5ColeccionesIngresos(objUMovie.getSagas());
+                    objUMovie.top5ColeccionesIngresos();
                     long fin3 = System.currentTimeMillis();
                     System.out.println("Tiempo de ejecucción de la consulta: " + (fin3-inicio3) + " ms");
                     break;
                 case 4:
                     System.out.println("Mostrando Top 10 de directores con mejor calificación...");
                     long inicio4 = System.currentTimeMillis();
-                    objUMovie.top10DirectoresMejorCalificacion(objUMovie.getDirectores());
+                    objUMovie.top10DirectoresMejorCalificacion();
                     long fin4 = System.currentTimeMillis();
                     System.out.println("Tiempo de ejecucción de la consulta: " + (fin4-inicio4) + " ms");
                     break;
