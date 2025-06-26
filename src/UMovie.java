@@ -249,17 +249,6 @@ public class UMovie {
                 }
             }
 
-            System.out.println(peliculas.size() + " peliculas");
-            System.out.println(sagas.size() + " sagas");
-            System.out.println(usuarios.size() + " usuarios");
-            System.out.println(actores.size() + " actores");
-            System.out.println(directores.size() + " directores");
-            int ratings = 0;
-            for(Usuario user: usuarios.values()) {
-                ratings = ratings + user.getCalificaciones().size();
-            }
-            System.out.println("Ratings" + ratings);
-
         } catch (IOException | CsvValidationException e) {
             System.out.println("Error cargando credits.csv: " + e.getMessage());
         }
